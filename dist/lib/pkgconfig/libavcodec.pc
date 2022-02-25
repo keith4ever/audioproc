@@ -1,0 +1,14 @@
+prefix=/home/projects/videocore/ffmpeg_lib
+exec_prefix=${prefix}
+libdir=/home/projects/videocore/ffmpeg_lib/muselive/lib
+includedir=/home/projects/videocore/ffmpeg_lib/muselive/inc
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 58.35.100
+Requires: libavutil >= 56.22.100
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavcodec -pthread -lm
+Libs.private: 
+Cflags: -I${includedir}
