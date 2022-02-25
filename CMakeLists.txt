@@ -8,7 +8,7 @@
 cmake_minimum_required(VERSION 3.3.0)
 project(audioproc)
 
-include(../env.cmake)
+include(env.cmake)
 
 set(ROOT_PATH		${PROJECT_SOURCE_DIR})
 
