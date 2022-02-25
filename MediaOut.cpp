@@ -62,6 +62,7 @@ bool MediaOut::OpenSegfile() {
         outStream->sample_aspect_ratio.den = inStream->sample_aspect_ratio.den;
         outStream->r_frame_rate = inStream->r_frame_rate;
         outStream->avg_frame_rate = inStream->avg_frame_rate;
+        avcodec_parameters_from_context(outStream->codecpar, m_pAudioCodecCtx);
         break;
         //av_dict_copy(&outStream->metadata, inStream->metadata, 0);
     }
@@ -94,8 +95,6 @@ bool MediaOut::Open(MediaIn *pIFile)
     char* pch = strrchr(m_pSinkConfig->outputURL, '.');
     if(pch != NULL && pch[1] != '/') *pch = '\0'; // just get rid of extension with .
 
-    OpenSegfile();
-
     AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
     if(codec == NULL){
         FUNCPRINT ": Audio Encoder AAC is not found.." << endl;
@@ -115,10 +114,6 @@ bool MediaOut::Open(MediaIn *pIFile)
     m_pAudioCodecCtx->time_base     = (AVRational){1, m_pAudioCodecCtx->sample_rate};
     m_pAudioCodecCtx->codec_type    = AVMEDIA_TYPE_AUDIO;
     m_pAudioCodecCtx->sample_fmt    = codec->sample_fmts[0];
-    /* Some container formats (like MP4) require global headers to be present.
- * Mark the encoder so that it behaves accordingly. */
-    if (m_pFileContext->oformat->flags & AVFMT_GLOBALHEADER)
-        m_pAudioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     int ret = avcodec_open2(m_pAudioCodecCtx, codec, NULL);
     if(ret < 0){
@@ -126,7 +121,11 @@ bool MediaOut::Open(MediaIn *pIFile)
         return false;
     }
 
-    avcodec_parameters_from_context(m_pFileContext->streams[0]->codecpar, m_pAudioCodecCtx);
+    OpenSegfile();
+    /* Some container formats (like MP4) require global headers to be present.
+    * Mark the encoder so that it behaves accordingly. */
+    if (m_pFileContext->oformat->flags & AVFMT_GLOBALHEADER)
+        m_pAudioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     m_pResampleCtx = swr_alloc();
     m_pResampleCtx = swr_alloc_set_opts(nullptr,
@@ -166,7 +165,7 @@ bool MediaOut::CloseSegfile(bool bForce) {
     outStream->nb_frames = (int)(m_writtenSampleNum - m_lastSampleNum);
     outStream->duration = (m_writtenSampleNum - m_lastSampleNum) * 1000 /m_pAudioCodecCtx->sample_rate;
     m_lastSampleNum = m_writtenSampleNum;
-    FUNCPRINT " duration = " << (int)(outStream->duration)
+    FUNCPRINT "#" << (m_fileSerial - 1) << " duration = " << (int)(outStream->duration)
             << " ms, # of samples = " << outStream->nb_frames << endl;
 
     av_write_trailer(m_pFileContext);
@@ -265,7 +264,7 @@ int MediaOut::EncodeWrite() {
     packet.pts = 1000 * m_writtenSampleNum / m_pAudioCodecCtx->sample_rate;
     packet.dts = packet.pts;
     packet.duration = 1000 * m_pOutFrame->nb_samples / m_pAudioCodecCtx->sample_rate;
-    int res = av_write_frame(m_pFileContext, &packet);
+    int res = av_interleaved_write_frame(m_pFileContext, &packet);
     if (res < 0) {
         printf("Error from output writing packet: %s\n", av_err2str(res));
     }
