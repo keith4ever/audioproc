@@ -12,17 +12,18 @@ fi
 # in order to fix this, run 'sudo apt install libsrt-dev'
 
 BUILD_CMD="../ffmpeg/configure --enable-static --disable-shared --disable-programs \
---disable-avdevice --disable-postproc --disable-avfilter \
---disable-programs --disable-logging --disable-everything --enable-avformat --enable-ffmpeg \
---disable-ffplay --disable-ffprobe --disable-asm --disable-doc --disable-devices \
---disable-network --disable-hwaccels --disable-parsers --disable-bsfs \
---enable-protocol=file,http,https,hls,tcp,rtmp,rtsp,rtp,tls \
+--disable-ffplay --disable-ffmpeg --disable-ffprobe --disable-avfilter \
+--disable-doc --disable-symver --disable-postproc --disable-gpl --disable-encoders \
+--disable-muxers --disable-bsfs --disable-protocols --disable-indevs \
+--disable-outdevs --disable-devices --disable-decoders --disable-avdevice \
+--disable-parsers --disable-demuxers --disable-filters --disable-hwaccels \
 --disable-debug --disable-indevs --disable-outdevs \
 --enable-encoder="flac,aac,mp3,m4a,wav,pcm_s16le,matroska" \
 --enable-decoder="flac,aac,mp3,m4a,wav,pcm_s16le,matroska" \
 --enable-parser="matroska,flac,aac,mp3,m4a,wav,pcm_s16le" \
---enable-demuxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts" \
---enable-muxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts" \
+--enable-demuxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
+--enable-muxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
+--enable-protocol=file,http,tcp,rtmp,rtsp,rtp \
 --prefix=${PWD} --libdir=${PWD}/muselive/lib --incdir=${PWD}/muselive/inc "
 
 

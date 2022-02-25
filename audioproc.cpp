@@ -22,6 +22,8 @@ void signal_callback_handler(int signum)
     printf("*** Caught interrupt signal %d ***\n",signum);
 
     sConfig.bProcessRun       = false;
+    av_usleep(1000000);
+    exit(0);
 }
 
 void deleteAllHandles() {
@@ -185,6 +187,8 @@ int main(int argc, char* argv[])
     gpIFile     = new MediaIn(&sConfig);
     gpOFile     = new MediaOut(&sConfig);
 
+    glLastTime = glStart = av_gettime();
+    glCurrFrames = glLastFrames = 0;
     pthread_create(&progPid, NULL, checkProgressThread, NULL);
 
     if (!gpIFile || !gpIFile->Open()) {
@@ -200,8 +204,6 @@ int main(int argc, char* argv[])
     }
 
     //FUNCPRINT "Input source: " << sConfig.inputFileName << endl;
-    glLastTime = glStart = av_gettime();
-    glCurrFrames = glLastFrames = 0;
 
     FileConcatLoop();
 
