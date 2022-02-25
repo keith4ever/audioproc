@@ -161,6 +161,8 @@ void initConfig(){
     sConfig.bProcessRun     = true;
     sConfig.srcTitle        = NULL;
     sConfig.outputURL       = new char[256];
+    sConfig.outsegfile      = new char[256];
+    sConfig.term            = 2000;
     memset(sConfig.outputURL, 0, sizeof(char) * 256);
 }
 
@@ -193,7 +195,7 @@ int main(int argc, char* argv[])
 
     PrintConfigs();
     if(!bRet){
-        fprintf(stderr, "can't write to %s\n", sConfig.outputURL);
+        fprintf(stderr, "can't write to %s\n", sConfig.outsegfile);
         assert(0);
     }
 

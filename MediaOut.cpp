@@ -23,7 +23,14 @@ MediaOut::~MediaOut()
 {
 }
 
-bool MediaOut::openOutputStreams(AVFormatContext *pFormatContext) {
+bool MediaOut::OpenSegfile() {
+    int ret;
+
+    // setting next segment file name here
+    sprintf(m_pSinkConfig->outsegfile, "%s_%d.aac", m_pSinkConfig->outputURL, m_fileSerial++);
+    avformat_alloc_output_context2(&m_pFileContext, nullptr,
+                       nullptr, m_pSinkConfig->outsegfile);
+
     unsigned int numOfstreams = m_pIFile->GetNumOfStreams();
     AVStream** inStreams = m_pIFile->GetStreams();
 
@@ -32,51 +39,41 @@ bool MediaOut::openOutputStreams(AVFormatContext *pFormatContext) {
     {
         AVStream* inStream = inStreams[i];
 
-        if(inStream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
-           inStream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
-            continue;
+        if(inStream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) continue;
 
-        switch(inStream->codecpar->codec_type){
-            case AVMEDIA_TYPE_AUDIO:
-                if(inStream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
-                    FUNCPRINT "Reference stream is not audio.." << endl;
-                    return false;
-                }
-
-                AVStream* outStream = avformat_new_stream(pFormatContext, NULL);
-                if (!outStream)
-                {
-                    FUNCPRINT "Failed to allocate new audio stream" << endl;
-                    return false;
-                }
-
-                if(avcodec_parameters_copy(outStream->codecpar, inStream->codecpar) < 0){
-                    FUNCPRINT "Failed to copy context from input to output stream codec context" << endl;
-                    return false;
-                }
-                outStream->codecpar->codec_tag = 0;
-                outStream->codecpar->codec_id = AV_CODEC_ID_AAC;
-                outStream->time_base.den = m_pIFile->GetAudioSampleRate();
-                outStream->time_base.num = 1;
-                outStream->sample_aspect_ratio.num = inStream->sample_aspect_ratio.num;
-                outStream->sample_aspect_ratio.den = inStream->sample_aspect_ratio.den;
-                outStream->r_frame_rate = inStream->r_frame_rate;
-                outStream->avg_frame_rate = inStream->avg_frame_rate;
-                break;
+        AVStream* outStream = avformat_new_stream(m_pFileContext, NULL);
+        if (!outStream)
+        {
+            FUNCPRINT "Failed to allocate new audio stream" << endl;
+            return false;
         }
+
+        if(avcodec_parameters_copy(outStream->codecpar, inStream->codecpar) < 0){
+            FUNCPRINT "Failed to copy context from input to output stream codec context" << endl;
+            return false;
+        }
+        outStream->codecpar->codec_tag = 0;
+        outStream->codecpar->codec_id = AV_CODEC_ID_AAC;
+        outStream->time_base.den = m_pIFile->GetAudioSampleRate();
+        outStream->time_base.num = 1;
+        outStream->sample_aspect_ratio.num = inStream->sample_aspect_ratio.num;
+        outStream->sample_aspect_ratio.den = inStream->sample_aspect_ratio.den;
+        outStream->r_frame_rate = inStream->r_frame_rate;
+        outStream->avg_frame_rate = inStream->avg_frame_rate;
+        break;
         //av_dict_copy(&outStream->metadata, inStream->metadata, 0);
     }
-    av_dump_format(pFormatContext, 0, NULL, 1);
-    return true;
-}
+    av_dump_format(m_pFileContext, 0, NULL, 1);
 
-bool MediaOut::setOutputURL() {
-    if(strlen(m_pSinkConfig->outputURL) <= 1)
-        strcpy(m_pSinkConfig->outputURL, m_pSinkConfig->inputFileName);
+    ret = avio_open(&m_pFileContext->pb, m_pSinkConfig->outsegfile, AVIO_FLAG_WRITE);
+    if (ret < 0) {
+        printf("Could not open output file %s", m_pSinkConfig->outsegfile);
+        return false;
+    }
 
-    char* pch = strrchr(m_pSinkConfig->outputURL, '.');
-    if(pch != NULL && pch[1] != '/') *pch = '\0'; // just get rid of extension with .
-    sprintf(m_pSinkConfig->outputURL, "%s.aac", m_pSinkConfig->outputURL);
+    if (avformat_write_header(m_pFileContext, NULL) < 0)
+        printf("Error occurred when writing header\n");
+    //FUNCPRINT "** Outfile seq. number: " << (m_pSinkConfig->inputSeqno-1) << endl;
 
     return true;
 }
@@ -89,20 +86,13 @@ bool MediaOut::Open(MediaIn *pIFile)
     assert(pIFile);
     m_pIFile            = pIFile;
 
-    if(!setOutputURL()) return false;
+    if(strlen(m_pSinkConfig->outputURL) <= 1)
+        strcpy(m_pSinkConfig->outputURL, m_pSinkConfig->inputFileName);
 
-    avformat_alloc_output_context2(&m_pFileContext,
-                                   nullptr, nullptr, m_pSinkConfig->outputURL);
+    char* pch = strrchr(m_pSinkConfig->outputURL, '.');
+    if(pch != NULL && pch[1] != '/') *pch = '\0'; // just get rid of extension with .
 
-    if(!openOutputStreams(m_pFileContext))
-        return false;
-
-    int ret;
-    ret = avio_open(&m_pFileContext->pb, m_pSinkConfig->outputURL, AVIO_FLAG_WRITE);
-    if (ret < 0) {
-        printf("Could not open output file %s", m_pSinkConfig->outputURL);
-        return false;
-    }
+    OpenSegfile();
 
     AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
     if(codec == NULL){
@@ -128,17 +118,13 @@ bool MediaOut::Open(MediaIn *pIFile)
     if (m_pFileContext->oformat->flags & AVFMT_GLOBALHEADER)
         m_pAudioCodecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-    ret = avcodec_open2(m_pAudioCodecCtx, codec, NULL);
+    int ret = avcodec_open2(m_pAudioCodecCtx, codec, NULL);
     if(ret < 0){
         FUNCPRINT "Audio codec open error.." << endl;
         return false;
     }
 
     avcodec_parameters_from_context(m_pFileContext->streams[0]->codecpar, m_pAudioCodecCtx);
-
-    if (avformat_write_header(m_pFileContext, NULL) < 0)
-        printf("Error occurred when writing header\n");
-    //FUNCPRINT "** Outfile seq. number: " << (m_pSinkConfig->inputSeqno-1) << endl;
 
     m_pResampleCtx = swr_alloc();
     m_pResampleCtx = swr_alloc_set_opts(nullptr,
@@ -165,21 +151,22 @@ bool MediaOut::Open(MediaIn *pIFile)
     return true;
 }
 
-void MediaOut::Close()
-{
-    if(m_pFileContext == NULL) return;
+bool MediaOut::CloseSegfile(bool bForce) {
+    if(m_pFileContext == nullptr) return false;
 
-    AVStream *outStream;
-    for (unsigned int i = 0; i < m_pFileContext->nb_streams; i++) {
-        outStream = m_pFileContext->streams[i];
-        int packetnum = m_writtenPacketNum[i] - m_lastPacketNum[i];
-        outStream->nb_frames = packetnum;
-        outStream->duration = (m_lastWriteDTS[i] - m_firstWriteDTS[i]);
-        m_lastPacketNum[i] = m_writtenPacketNum[i];
-        m_firstWriteDTS[i] = m_lastWriteDTS[i];
+    if(!bForce) {
+        AVPacket packet;
+        av_packet_rescale_ts(&packet, m_pAudioCodecCtx->time_base, MKV_TIMEBASE);
+        if (packet.pts - packet.dts < m_pSinkConfig->term)
+            return false;
+    }
+
+    AVStream *outStream = m_pFileContext->streams[0];
+    outStream->nb_frames = (int)(m_writtenSampleNum - m_lastSampleNum);
+    outStream->duration = (m_lastWriteDTS - m_firstWriteDTS);
+    m_lastSampleNum = m_writtenSampleNum;
         /*cout << "   #" << i << " stream: duration = " << (int)(outStream->duration)
             << " ms, # of packets = " << outStream->nb_frames << endl;*/
-    }
 
     av_write_trailer(m_pFileContext);
     if(m_pFileContext->pb) {
@@ -191,6 +178,13 @@ void MediaOut::Close()
     avformat_free_context(m_pFileContext);
     m_pFileContext = nullptr;
     m_lastSegDTS = m_currSegDTS;
+    return true;
+}
+
+void MediaOut::Close()
+{
+    CloseSegfile(true);
+
     avcodec_free_context(&m_pAudioCodecCtx);
     av_free(m_pAudioCodecCtx);
     av_frame_free(&m_pOutFrame);
@@ -201,17 +195,13 @@ void MediaOut::initVars() {
     m_pFifo         = nullptr;
     m_pConvSample   = nullptr;
     m_pOutFrame     = nullptr;
-    memset(&m_inTimebase, 0, MAX_STREAM_NUM * sizeof(AVRational));
-    memset(&m_writtenPacketNum, 0, MAX_STREAM_NUM * sizeof(int));
-    memset(&m_lastPacketNum, 0, MAX_STREAM_NUM * sizeof(int));
+    m_inTimebase    = {1, 1024};
+    m_writtenSampleNum = 0;
+    m_lastSampleNum = 0;
     m_currSegDTS = 0;
     m_lastSegDTS = 0;
     m_fileSerial        = 0;
-    for(int i = 0; i < MAX_STREAM_NUM; i++) {
-        m_lastWriteDTS[i] = BIG_NEG_TIMING;
-        m_inPktStart[i] = BIG_NEG_TIMING;
-        m_firstWriteDTS[i] = BIG_NEG_TIMING;
-    }
+    m_inPktStart = BIG_NEG_TIMING;
 }
 
 int MediaOut::ConvertFrame(AVFrame *inFrame) {
@@ -235,6 +225,9 @@ int MediaOut::ConvertFrame(AVFrame *inFrame) {
 }
 
 int MediaOut::EncodeWrite() {
+    if(CloseSegfile(false))
+        OpenSegfile();
+
     const int frame_size = FFMIN(av_audio_fifo_size(m_pFifo),
                                  m_pAudioCodecCtx->frame_size);
 
@@ -268,22 +261,6 @@ int MediaOut::EncodeWrite() {
         fprintf(stderr, "Could not encode outFrame (error '%s')\n", av_err2str(ret));
         return PKT_NOREF;
     }
-    int stridx = packet.stream_index;
-
-    if (m_inPktStart[stridx] == BIG_NEG_TIMING) {
-        m_inPktStart[stridx] = packet.pts;
-    }
-
-    if(packet.dts != AV_NOPTS_VALUE)
-        packet.dts -= m_inPktStart[stridx];
-    packet.pts -= m_inPktStart[stridx];
-
-    //av_packet_rescale_ts(&packet->avpacket, m_pIFile->GetTimeBase(stridx), MKV_TIMEBASE);
-    m_duration[stridx] = packet.duration;
-
-    m_lastWriteDTS[stridx] = packet.dts;
-    if(m_firstWriteDTS[stridx] == BIG_NEG_TIMING)
-        m_firstWriteDTS[stridx] = m_lastWriteDTS[stridx];
 
     int res = av_write_frame(m_pFileContext, &packet);
     if (res < 0) {
@@ -291,7 +268,7 @@ int MediaOut::EncodeWrite() {
     }
 
     av_packet_unref(&packet);
-    m_writtenPacketNum[stridx]++;
+    m_writtenSampleNum++;
 
     return PKT_SUCCESS;
 }

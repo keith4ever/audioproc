@@ -126,8 +126,6 @@ bool MediaIn::Open()
     }
 
     av_dump_format(m_pFormatContext, 0, NULL, false);
-    m_pSinkConfig->bitrate  = m_iBitrate;
-
     return true;
 }
 

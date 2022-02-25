@@ -36,8 +36,8 @@ public:
 
 private:
     void            initVars();
-    bool            openOutputStreams(AVFormatContext* pFormatContext);
-    bool            setOutputURL();
+    bool            OpenSegfile();
+    bool            CloseSegfile(bool bForce);
 
     MediaIn *       m_pIFile;   // To access input file's information
     AVFormatContext* m_pFileContext;
@@ -50,15 +50,11 @@ private:
     AVFrame         *m_pOutFrame;
     uint8_t         **m_pConvSample;
 
-    AVRational      m_inTimebase[MAX_STREAM_NUM]; // cache of input stream's time base value, per stream
+    AVRational      m_inTimebase; // cache of input stream's time base value, per stream
     int64_t         m_lastSegDTS;
     int64_t         m_currSegDTS;
-    int64_t         m_inPktStart[MAX_STREAM_NUM];
-    int64_t         m_firstWriteDTS[MAX_STREAM_NUM];
-    int64_t         m_lastWriteDTS[MAX_STREAM_NUM];
-    int64_t         m_duration[MAX_STREAM_NUM];
-    int             m_writtenPacketNum[MAX_STREAM_NUM];
-    int             m_lastPacketNum[MAX_STREAM_NUM];
+    int64_t         m_writtenSampleNum;
+    int64_t         m_lastSampleNum;
 };
 
 #endif //VIDEOENGINE_MEDIAOUTFILE_H

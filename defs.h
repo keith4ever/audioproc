@@ -33,12 +33,13 @@
 
 typedef struct _SinkConfig
 {
-    int64_t         bitrate;
-    bool            bProcessRun;
-    char*           srcTitle;
-    char*           inputFileName;
-    char*           outputURL;
-    int64_t         duration;
+    int         term;
+    bool        bProcessRun;
+    char*       srcTitle;
+    char*       inputFileName;
+    char*       outputURL;
+    char*       outsegfile;
+    int64_t     duration;
 }SinkConfig;
 
 #ifdef  DEBUG
