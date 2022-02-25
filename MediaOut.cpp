@@ -27,9 +27,11 @@ bool MediaOut::OpenSegfile() {
     int ret;
 
     // setting next segment file name here
-    sprintf(m_pSinkConfig->outsegfile, "%s_%d.aac", m_pSinkConfig->outputURL, m_fileSerial++);
-    avformat_alloc_output_context2(&m_pFileContext, nullptr,
-                       nullptr, m_pSinkConfig->outsegfile);
+    sprintf(m_pSinkConfig->outsegfile, "%s_%d.mkv", m_pSinkConfig->outputURL, m_fileSerial++);
+    ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,
+                       "matroska", m_pSinkConfig->outsegfile);
+    if(ret < 0)
+        FUNCPRINT "could not open output file: " << av_err2str(ret) << endl;
 
     unsigned int numOfstreams = m_pIFile->GetNumOfStreams();
     AVStream** inStreams = m_pIFile->GetStreams();
@@ -155,18 +157,17 @@ bool MediaOut::CloseSegfile(bool bForce) {
     if(m_pFileContext == nullptr) return false;
 
     if(!bForce) {
-        AVPacket packet;
-        av_packet_rescale_ts(&packet, m_pAudioCodecCtx->time_base, MKV_TIMEBASE);
-        if (packet.pts - packet.dts < m_pSinkConfig->term)
+        if ((m_writtenSampleNum - m_lastSampleNum) * 1000 /m_pAudioCodecCtx->sample_rate <
+            m_pSinkConfig->term)
             return false;
     }
 
     AVStream *outStream = m_pFileContext->streams[0];
     outStream->nb_frames = (int)(m_writtenSampleNum - m_lastSampleNum);
-    outStream->duration = (m_lastWriteDTS - m_firstWriteDTS);
+    outStream->duration = (m_writtenSampleNum - m_lastSampleNum) * 1000 /m_pAudioCodecCtx->sample_rate;
     m_lastSampleNum = m_writtenSampleNum;
-        /*cout << "   #" << i << " stream: duration = " << (int)(outStream->duration)
-            << " ms, # of packets = " << outStream->nb_frames << endl;*/
+    FUNCPRINT " duration = " << (int)(outStream->duration)
+            << " ms, # of samples = " << outStream->nb_frames << endl;
 
     av_write_trailer(m_pFileContext);
     if(m_pFileContext->pb) {
@@ -201,7 +202,6 @@ void MediaOut::initVars() {
     m_currSegDTS = 0;
     m_lastSegDTS = 0;
     m_fileSerial        = 0;
-    m_inPktStart = BIG_NEG_TIMING;
 }
 
 int MediaOut::ConvertFrame(AVFrame *inFrame) {
@@ -262,13 +262,15 @@ int MediaOut::EncodeWrite() {
         return PKT_NOREF;
     }
 
+    packet.pts = 1000 * m_writtenSampleNum / m_pAudioCodecCtx->sample_rate;
+    packet.dts = packet.pts;
+    packet.duration = 1000 * m_pOutFrame->nb_samples / m_pAudioCodecCtx->sample_rate;
     int res = av_write_frame(m_pFileContext, &packet);
     if (res < 0) {
         printf("Error from output writing packet: %s\n", av_err2str(res));
     }
-
+    m_writtenSampleNum += m_pOutFrame->nb_samples;
     av_packet_unref(&packet);
-    m_writtenSampleNum++;
 
     return PKT_SUCCESS;
 }

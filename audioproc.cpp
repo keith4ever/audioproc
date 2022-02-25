@@ -162,7 +162,7 @@ void initConfig(){
     sConfig.srcTitle        = NULL;
     sConfig.outputURL       = new char[256];
     sConfig.outsegfile      = new char[256];
-    sConfig.term            = 2000;
+    sConfig.term            = 10000;
     memset(sConfig.outputURL, 0, sizeof(char) * 256);
 }
 
