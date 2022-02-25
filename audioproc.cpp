@@ -42,11 +42,10 @@ void deleteAllHandles() {
 void PrintHelp(bool bUsage)
 {
     printf("\n\n=================================================================\n");
-    printf("* SegUtil ver. %s - All rights reserved by Keith Ha. *\n",
-           SEGUTIL_VERSION);
+    printf("* audioproc ver. %s - All rights reserved by Keith Ha. *\n", _VERSION);
     if(bUsage) {
-        printf("\nUsage: ./audioproc -i <full path of first segment filename>\n"
-               "                  [-o <output file.mkv>] -start <start segno#> -end <end segno#>\n");
+        printf("\nUsage: ./audioproc -i <full path of audio wav file>\n"
+               "                  [-o <output file.aac>] \n");
     }
     printf("=================================================================\n");
 }

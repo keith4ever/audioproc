@@ -14,7 +14,7 @@
 #include <signal.h>
 #include <iostream>
 
-#define SEGUTIL_VERSION     "1.43"
+#define _VERSION     "1.00"
 
 #define SAFE_FREE(x)        if(x){ delete(x); x = NULL;}
 #define SAFE_DEINIT_FREE(x) if(x){ x->Deinit(); delete(x); x = NULL;}
