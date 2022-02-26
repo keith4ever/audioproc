@@ -66,15 +66,15 @@ bool MediaIn::initFormatContext() {
     m_pFormatContext->interrupt_callback.opaque = this;
     m_pFormatContext->max_analyze_duration = 10240000;
 
-    if(strstr(m_pSinkConfig->inputFileName, "http://")
-        || strstr(m_pSinkConfig->inputFileName, "tcp://")) {
+    if(strstr(m_pSinkConfig->inputURL, "http://")
+        || strstr(m_pSinkConfig->inputURL, "tcp://")) {
         av_dict_set(&pFormatOpts, "listen", "1", 0);
         av_dict_set(&pFormatOpts, "timeout", "200000000", 0);
-    }else if(strstr(m_pSinkConfig->inputFileName, "rtmp://")) {
+    }else if(strstr(m_pSinkConfig->inputURL, "rtmp://")) {
         av_dict_set(&pFormatOpts, "rtmp_live", "live", 0);
         av_dict_set(&pFormatOpts, "listen", "1", 0);
         av_dict_set(&pFormatOpts, "timeout", "300000", 0);
-    }else if(strstr(m_pSinkConfig->inputFileName, "rtsp://")) {
+    }else if(strstr(m_pSinkConfig->inputURL, "rtsp://")) {
         av_dict_set(&pFormatOpts, "rtsp_transport", "tcp", 0);
         av_dict_set(&pFormatOpts, "rtsp_flags", "listen", 0);
         av_dict_set(&pFormatOpts, "rtsp_flags", "prefer_tcp", 0);
@@ -83,12 +83,12 @@ bool MediaIn::initFormatContext() {
     // Open an input stream and read the header. The codecs are not opened.
     // The stream must be closed with avformat_close_input().
     // AVInputFormat *pInputFormat == NULL --> format is not specified. Will be autodected.
-    res = avformat_open_input(&m_pFormatContext, m_pSinkConfig->inputFileName,
+    res = avformat_open_input(&m_pFormatContext, m_pSinkConfig->inputURL,
                               NULL, &pFormatOpts);
     if (res < 0)
     {
         printf("** avformat_open_input Error: %s: %s\n",
-               av_err2str_inline(res), m_pSinkConfig->inputFileName);
+               av_err2str_inline(res), m_pSinkConfig->inputURL);
         return false;
     }
 

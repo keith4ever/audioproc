@@ -35,11 +35,12 @@ typedef struct _SinkConfig
 {
     int         term;
     bool        bProcessRun;
-    char*       srcTitle;
-    char*       inputFileName;
-    char*       outputURL;
-    char*       outsegfile;
-    int64_t     duration;
+    char*       inputURL;
+    char*       outputID;
+    char        httpFilePath[128];
+    uint16_t    httpPort;
+    int         httpFilecheckterm;
+
 }SinkConfig;
 
 #ifdef  DEBUG

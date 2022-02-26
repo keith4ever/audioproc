@@ -5,6 +5,9 @@
  * Reuse of any of the content for any purpose without the permission of Keith Ha
  * is strictly and expressively prohibited.
  */
+
+#include <unistd.h>
+#include <iomanip>
 #include "MediaOut.h"
 
 #define BIG_NEG_TIMING  -1000000
@@ -13,23 +16,27 @@
 ================= */
 
 MediaOut::MediaOut(SinkConfig* pConfig) {
-    m_pFileContext      = NULL;
+    m_pFileContext      = nullptr;
     m_pSinkConfig       = pConfig;
     m_pAudioCodecCtx    = nullptr;
+    m_outsegfile        = new char[256];
     initVars();
 }
 
 MediaOut::~MediaOut()
 {
+    delete [] m_outsegfile;
+    m_outsegfile = nullptr;
 }
 
 bool MediaOut::OpenSegfile() {
     int ret;
 
     // setting next segment file name here
-    sprintf(m_pSinkConfig->outsegfile, "%s_%d.mkv", m_pSinkConfig->outputURL, m_fileSerial++);
+    sprintf(m_outsegfile, "%s/%s_%d.mkv", m_pSinkConfig->outputID,
+            m_pSinkConfig->outputID, m_fileSerial++);
     ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,
-                       "matroska", m_pSinkConfig->outsegfile);
+                       "matroska", m_outsegfile);
     if(ret < 0)
         FUNCPRINT "could not open output file: " << av_err2str(ret) << endl;
 
@@ -68,9 +75,9 @@ bool MediaOut::OpenSegfile() {
     }
     av_dump_format(m_pFileContext, 0, NULL, 1);
 
-    ret = avio_open(&m_pFileContext->pb, m_pSinkConfig->outsegfile, AVIO_FLAG_WRITE);
+    ret = avio_open(&m_pFileContext->pb, m_outsegfile, AVIO_FLAG_WRITE);
     if (ret < 0) {
-        printf("Could not open output file %s", m_pSinkConfig->outsegfile);
+        printf("Could not open output file %s", m_outsegfile);
         return false;
     }
 
@@ -89,11 +96,19 @@ bool MediaOut::Open(MediaIn *pIFile)
     assert(pIFile);
     m_pIFile            = pIFile;
 
-    if(strlen(m_pSinkConfig->outputURL) <= 1)
-        strcpy(m_pSinkConfig->outputURL, m_pSinkConfig->inputFileName);
-
-    char* pch = strrchr(m_pSinkConfig->outputURL, '.');
+    char* pch = strrchr(m_pSinkConfig->outputID, '.');
     if(pch != NULL && pch[1] != '/') *pch = '\0'; // just get rid of extension with .
+
+    if(access(m_pSinkConfig->outputID, F_OK) == -1){
+        if(mkdir(m_pSinkConfig->outputID, 0777) == -1){
+            FUNCPRINT "Could not create subfolder: " << m_pSinkConfig->outputID << endl;
+            return false;
+        }
+    } else {
+        char temp[256];
+        sprintf(temp, "rm -rf %s/*", m_pSinkConfig->outputID);
+        system(temp);
+    }
 
     AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
     if(codec == NULL){
@@ -152,21 +167,37 @@ bool MediaOut::Open(MediaIn *pIFile)
     return true;
 }
 
+void MediaOut::timeformat(int sec) {
+    int h = sec / (60 * 60);
+    sec -= h * (60 * 60);
+
+    int m = sec / (60);
+    sec -= m * (60);
+    cout << "[" << std::setfill('0') << std::setw(2) << h << ':' << std::setw(2) << m
+         << ':' << std::setw(2) << sec << "] ";
+}
+
 bool MediaOut::CloseSegfile(bool bForce) {
     if(m_pFileContext == nullptr) return false;
 
     if(!bForce) {
-        if ((m_writtenSampleNum - m_lastSampleNum) * 1000 /m_pAudioCodecCtx->sample_rate <
+        if ((m_totalSampleNum - m_segSampleNum) * 1000 / m_pAudioCodecCtx->sample_rate <
             m_pSinkConfig->term)
             return false;
     }
 
     AVStream *outStream = m_pFileContext->streams[0];
-    outStream->nb_frames = (int)(m_writtenSampleNum - m_lastSampleNum);
-    outStream->duration = (m_writtenSampleNum - m_lastSampleNum) * 1000 /m_pAudioCodecCtx->sample_rate;
-    m_lastSampleNum = m_writtenSampleNum;
-    FUNCPRINT "#" << (m_fileSerial - 1) << " duration = " << (int)(outStream->duration)
-            << " ms, # of samples = " << outStream->nb_frames << endl;
+    outStream->nb_frames = (int)(m_totalSampleNum - m_segSampleNum);
+    outStream->duration = (m_totalSampleNum - m_segSampleNum) * 1000 / m_pAudioCodecCtx->sample_rate;
+    m_segSampleNum = m_totalSampleNum;
+
+    if(m_lastDTS - m_printDTS >= 10000){
+        timeformat(m_lastDTS/1000);
+        cout << "#" << (m_fileSerial - 1) << " elapsed = " << (int)((m_lastDTS - m_printDTS) / 1000)
+                      << " s, # of samples = " << (m_totalSampleNum - m_printSampleNum) << endl;
+        m_printDTS = m_lastDTS;
+        m_printSampleNum = m_totalSampleNum;
+    }
 
     av_write_trailer(m_pFileContext);
     if(m_pFileContext->pb) {
@@ -177,7 +208,6 @@ bool MediaOut::CloseSegfile(bool bForce) {
     }
     avformat_free_context(m_pFileContext);
     m_pFileContext = nullptr;
-    m_lastSegDTS = m_currSegDTS;
     return true;
 }
 
@@ -195,12 +225,11 @@ void MediaOut::initVars() {
     m_pFifo         = nullptr;
     m_pConvSample   = nullptr;
     m_pOutFrame     = nullptr;
-    m_inTimebase    = {1, 1024};
-    m_writtenSampleNum = 0;
-    m_lastSampleNum = 0;
-    m_currSegDTS = 0;
-    m_lastSegDTS = 0;
-    m_fileSerial        = 0;
+    m_printDTS      = 0;
+    m_totalSampleNum = 0;
+    m_segSampleNum  = 0;
+    m_fileSerial    = 0;
+    m_printSampleNum = 0;
 }
 
 int MediaOut::ConvertFrame(AVFrame *inFrame) {
@@ -261,14 +290,15 @@ int MediaOut::EncodeWrite() {
         return PKT_NOREF;
     }
 
-    packet.pts = 1000 * m_writtenSampleNum / m_pAudioCodecCtx->sample_rate;
+    packet.pts = 1000 * m_totalSampleNum / m_pAudioCodecCtx->sample_rate;
     packet.dts = packet.pts;
     packet.duration = 1000 * m_pOutFrame->nb_samples / m_pAudioCodecCtx->sample_rate;
+    m_lastDTS = packet.dts;
     int res = av_interleaved_write_frame(m_pFileContext, &packet);
     if (res < 0) {
         printf("Error from output writing packet: %s\n", av_err2str(res));
     }
-    m_writtenSampleNum += m_pOutFrame->nb_samples;
+    m_totalSampleNum += m_pOutFrame->nb_samples;
     av_packet_unref(&packet);
 
     return PKT_SUCCESS;

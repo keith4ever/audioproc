@@ -19,6 +19,7 @@ extern "C"
 #include <assert.h>
 #include <list>
 #include <string>
+#include <sys/stat.h>
 #include "MediaIn.h"
 
 class MediaOut
@@ -38,6 +39,7 @@ private:
     void            initVars();
     bool            OpenSegfile();
     bool            CloseSegfile(bool bForce);
+    void            timeformat(int sec);
 
     MediaIn *       m_pIFile;   // To access input file's information
     AVFormatContext* m_pFileContext;
@@ -49,12 +51,13 @@ private:
     AVAudioFifo     *m_pFifo;
     AVFrame         *m_pOutFrame;
     uint8_t         **m_pConvSample;
+    char*           m_outsegfile;
 
-    AVRational      m_inTimebase; // cache of input stream's time base value, per stream
-    int64_t         m_lastSegDTS;
-    int64_t         m_currSegDTS;
-    int64_t         m_writtenSampleNum;
-    int64_t         m_lastSampleNum;
+    int64_t         m_printDTS;
+    int64_t         m_lastDTS;
+    int64_t         m_totalSampleNum;
+    int64_t         m_segSampleNum;
+    int64_t         m_printSampleNum;
 };
 
 #endif //VIDEOENGINE_MEDIAOUTFILE_H
