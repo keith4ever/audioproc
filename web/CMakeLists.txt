@@ -30,15 +30,10 @@ link_directories(
 )
 
 set(SOURCE_FILES
-        h265/main.cpp
-        h265/utils.cpp
-        h265/parsedecode.cpp
-        h265/queue.cpp
-        h265/download.cpp
-        h264/main.cpp
-        h264/utils.cpp
-        h264/remux.cpp
-        h264/download.cpp
+        cpp/main.cpp
+        cpp/utils.cpp
+        cpp/remux.cpp
+        cpp/download.cpp
         )
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)

@@ -40,7 +40,7 @@ typedef struct _SinkConfig
     char        httpFilePath[128];
     uint16_t    httpPort;
     int         httpFilecheckterm;
-
+    int         lastSegno;
 }SinkConfig;
 
 #ifdef  DEBUG

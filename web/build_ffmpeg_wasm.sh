@@ -35,7 +35,7 @@ echo ""
 
 CFLAGS="-s USE_PTHREADS=1 -O3 -Wl,--export=__heap_base -Wl,--export=__data_end -Wl,--export=malloc -Wl,--export=free "
 LDFLAGS="$CFLAGS"
-emconfigure src/configure \
+emconfigure ../ffmpeg/configure \
   --prefix=./webffmpeg \
   --enable-cross-compile \
   --target-os=none \
@@ -72,10 +72,10 @@ emconfigure src/configure \
   --disable-debug \
   --disable-indevs \
   --disable-outdevs \
-  --enable-decoder="flac,aac,mp3,m4a" \
-  --enable-parser="flac,aac,mp3,m4a" \
-  --enable-demuxer="flac,aac,mp3,m4a" \
-  --enable-muxer="flac,aac,mp3,m4a" \
+  --enable-decoder="matroska,flac,aac,mp3,m4a" \
+  --enable-parser="matroska,flac,aac,mp3,m4a" \
+  --enable-demuxer="matroska,flac,aac,mp3,m4a" \
+  --enable-muxer="matroska,flac,aac,mp3,m4a" \
   --enable-optimizations \
   --enable-stripping \
   --enable-protocol=file 

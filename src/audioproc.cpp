@@ -11,9 +11,9 @@
 #include "defs.h"
 
 SinkConfig      sConfig = {0};
-shared_ptr<MediaIn>       gpIFile         = NULL;
-shared_ptr<MediaOut>      gpOFile         = NULL;
-FileResponse*   gpFileRes       = nullptr;
+shared_ptr<MediaIn>       gpIFile  = nullptr;
+shared_ptr<MediaOut>      gpOFile  = nullptr;
+FileResponse*   gpFileRes          = nullptr;
 
 using namespace std;
 
@@ -72,7 +72,7 @@ bool CheckConfigs()
     printf("=================================================================\n");
     printf("    root file path  : \"%s\"\n", sConfig.httpFilePath);
     printf("    file check term : %d (ms)\n", sConfig.httpFilecheckterm);
-    printf("    URL             : \"http://<IPaddr>:%d/muselive/%s/%s_#seg.mkv\"\n",
+    printf("    URL             : \"http://<IPaddr>:%d/%s/%s_#seg.mkv\"\n",
            sConfig.httpPort, sConfig.outputID, sConfig.outputID);
     printf("    service start   : ");
     print_timestamp();  cout << endl;
@@ -182,6 +182,7 @@ void initConfig(){
     sConfig.inputURL        = nullptr;
     sConfig.outputID        = nullptr;
     sConfig.term            = 1000;
+    sConfig.lastSegno       = 0;
 }
 
 int main(int argc, char* argv[])

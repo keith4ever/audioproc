@@ -31,7 +31,7 @@ const videoOrderTwo = [
     [0,1]
 ];
 
-//H264player states.
+//Player states.
 const constStateStop            = 0;
 const constStatePlaying         = 1;
 const constStatePause           = 2;

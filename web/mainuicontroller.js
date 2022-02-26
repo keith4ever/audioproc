@@ -15,10 +15,7 @@ let loadingDiv = document.getElementById("loading");
 let agent = navigator.userAgent.toLowerCase();
 
 function hasUserAgent(arr){
-  // arr.forEach(val => {
-  //   //window.alert(val);
-  //   if(agent.indexOf(val) > -1) return true;
-  // });
+
   for(let i = 0; i < arr.length; i++){
     if(agent.indexOf(arr[i]) > -1) return true;
   }
@@ -27,8 +24,6 @@ function hasUserAgent(arr){
 
 let userAgentAndroid = agent.indexOf("android") > -1;
 let userAgentIOS = hasUserAgent(["ios","iphone","ipad","ipod"]); // agent.indexOf("iphone") > -1; //
-// window.alert(agent);
-// window.alert("iOS: " + userAgentIOS);
 
 setupMainUI();
 
@@ -54,21 +49,6 @@ function onEasterEggClick(){
     document.getElementById("testBar").style.display = "block";
     document.getElementById("videoPlayer").style.height = "calc(56.25vw + 28px)"; //NOTE: Doesn't work?
   }
-}
-
-function loadAppOrPlayStore() {
-  if(!userAgentIOS && !userAgentAndroid) return;
-  windowSwitch = false;
-  let url = window.location.pathname;
-  window.location.href = "cruztv://uuid?" + this.superStreamPlayerSDK.uuid;
-  setTimeout(()=>{
-    if(!windowSwitch){
-       //window.alert("hidden");
-       let store = userAgentAndroid ? "https://play.google.com/store/apps/details?id=com.alcacruz.cruztv"
-          : "https://apps.apple.com/us/app/cruztv/id1472275741";
-       window.location = store;
-     }
-    }, 1000);
 }
 
 function displayLiveButton(show){
@@ -123,33 +103,7 @@ function togglePlayPause(showPlay){
 }
 
 function addVideoListItem(title, author, imageLink, uuid){
-  let videoListContainer = document.getElementById("videoListContainer");
-  let videoListItem = document.createElement('div');
-  videoListItem.className = "videoListItem";
-  videoListItem.onclick = function() {onVideoListClick(uuid)};//onVideoListClick(uuid);
 
-  let vliImg = document.createElement('div');
-  vliImg.className = "VLI_img";
-  if(!imageLink.includes("https"))
-    imageLink = imageLink.replace("http", "https");
-  vliImg.style.backgroundImage = "url(" + imageLink +")";
-  videoListItem.appendChild(vliImg);
-
-  let vliTextContainer = document.createElement('div');
-  vliTextContainer.className = "VLI_textContainer";
-  let vliTitle = document.createElement('div');
-  vliTitle.className = "VLI_title";
-  vliTitle.innerHTML = title;
-  vliTextContainer.appendChild(vliTitle);
-
-  let vliAuthor = document.createElement('div');
-  vliAuthor.className = "VLI_author";
-  vliAuthor.innerHTML = author;
-  vliTextContainer.appendChild(vliAuthor);
-
-  videoListItem.appendChild(vliTextContainer);
-
-  videoListContainer.appendChild(videoListItem);
 }
 
 function setUpTrack(){
@@ -158,8 +112,9 @@ function setUpTrack(){
   let trackBar  = document.getElementById("trackBar");
   let me = this;
   trackBar.addEventListener("click", function(e) {
-    if(me.superStreamPlayerSDK !== null) {
-      if (!(me.superStreamPlayerSDK.getPlayerState() === constStatePlaying || me.superStreamPlayerSDK.getPlayerState() === constStatePause))
+    if(me.player !== null) {
+      if (!(me.player.getState() === constStatePlaying
+          || me.player.getState() === constStatePause))
         return;
     }
     else{
@@ -167,12 +122,7 @@ function setUpTrack(){
     }
     let seekPos = e.offsetX / this.offsetWidth;
     timeTrack.style.width = seekPos * 100 + "%";
-    let seekTimeSec = seekPos * me.superStreamPlayerSDK.getDuration();
-    timeLabel.innerHTML = formatTime(seekTimeSec) + " / " + displayDuration;
-    let firstSec = Math.round(seekTimeSec);
-    me.superStreamPlayerSDK.seek(firstSec);
   })
-  //self.superStreamPlayerSDK.setTrack(timeTrack, timeLabel);
 }
 
 // Called on resume (video ready or seek end)
@@ -202,17 +152,9 @@ function resetTrack(){
 }
 
 function updateTrackTime() {
-  if (this.superStreamPlayerSDK.player.playerState == constStatePlaying) {
-    let currentPlayTime = this.superStreamPlayerSDK.getCurrentPlayTime();
+  if (this.player.getState() === constStatePlaying) {
+    let currentPlayTime = this.player.getCurrentTime();
     if(currentPlayTime < 0) return;
-
-    if (timeTrack && !this.superStreamPlayerSDK.isSeeking()) {
-      let timePos = currentPlayTime / this.superStreamPlayerSDK.getDuration(); //* 1000;
-      timeTrack.style.width = timePos * 100 + "%";
-    }
-    if (timeLabel && !this.superStreamPlayerSDK.isSeeking()) {
-      timeLabel.innerHTML = formatTime(currentPlayTime) + " / " + displayDuration;
-    }
   }
 };
 
@@ -224,41 +166,24 @@ function formatTime(s) {
   return result;
 };
 
-function onVideoListClick(uuid){
-  if(window.location.href.includes("test.cruz.tv"))
-    window.location = "https://test.cruz.tv/player.html?uuid=" + uuid;
-  else window.location = "https://watch.cruz.tv/player.html?uuid=" + uuid;
-}
-
 function setupMainUI(){
   document.addEventListener("onVideoReady", (event) => {
     //me.util.log("constructor", "onVideoReady");
     hideLoading();
-    if (timeTrack) {
-      timeTrack.max = this.superStreamPlayerSDK.getDuration();
-      displayDuration = formatTime(this.superStreamPlayerSDK.getDuration());
-    }
     setUpTrack();
     startTrackTimer();
 
-    if(this.superStreamPlayerSDK.isLive) {
-      displayLiveButton(true);
-      displaySeekButtons(false);
-      changeLiveColorButton(true);
-    }
+    displayLiveButton(true);
+    displaySeekButtons(false);
+    changeLiveColorButton(true);
 
     togglePlayPause(false);
-    //
   });
 
   document.addEventListener("onSeekEnd", (event) => {
     //me.util.log("constructor", "onSeekEnd");
     hideLoading();
     startTrackTimer();
-    // if (timeTrack) {
-    //   timeTrack.max = this.duration;
-    //   displayDuration = formatTime(this.duration / 1000);
-    // }
   });
 
   document.addEventListener("visibilitychange", function() {
@@ -274,26 +199,13 @@ function setupMainUI(){
     let fn = "onVideoEnd";
     logger.logInfo(fn);
     hideLoading();
-    if(this.superStreamPlayerSDK.isLive && !forceStop) {
-      showVideoMessage("The broadcast you were watching has ended");
-      displayControlButtons(false);
-      // if(this.superStreamConnect) this.superStreamConnect.closeWebsocket();
-    }
-    //sendRTQA();
+    showVideoMessage("The broadcast you were watching has ended");
+    displayControlButtons(false);
   });
 
   document.addEventListener("onSuperStreamApiError", (event) => {
     showVideoMessage("Unable to load content");
     displayControlButtons(false);
-  });
-
-  document.addEventListener('fullscreenchange', (event) => {
-    document.getElementById("full-screen").className = document.fullscreenElement? "compress" : "expand";
-    // TODO: Change how we get canvas
-    let canvas = document.getElementById("playCanvas");
-    canvas.style.width = document.fullscreenElement? "100vw" : "100%";
-    canvas.style.height = document.fullscreenElement? "56.25vw" : "100%";
-    document.getElementById("timeTrack").style.width = document.fullscreenElement? "calc(100vw - 20px)" : "calc(90vw - 20px)";
   });
 
   setupMouseEvents();

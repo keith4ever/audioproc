@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <httpserver.hpp>
 #include <filesystem>
+#include <nlohmann/json.hpp>
 #include "defs.h"
 
 using namespace httpserver;
@@ -34,9 +35,10 @@ public:
 
 private:
     SinkConfig* m_pConfig;
-    void    print_timestamp();
     string  get_local_filepath(const http_request& req);
+    void print_timestamp();
     shared_ptr<string_response> sendError(char* msg, int code);
+    shared_ptr<http_response> getRESTfulResponse(string api);
 };
 
 

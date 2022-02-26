@@ -25,7 +25,7 @@ set(HTTPSERVER_LIB   ${ROOT_PATH}/httpd/lib)
 message("-- FFMPEG lib folder is ${FFMPEG_LIBS}")
 
 include_directories(
-        ${APP_INC_PATH}
+        ${ROOT_PATH}/src
         ${HTTPSERVER_INC}
         ${FFMPEG_INCS}
         ${VIDEOCORE_COMMON_INC}

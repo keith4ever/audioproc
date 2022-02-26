@@ -28,10 +28,10 @@ function Remuxer() {
     this.url                = null;
     this.prevTime           = new Date(Date.now());
     this.initVars();
-    this.locationPath       = "superStreamSDK/";
+    this.locationPath       = "js/";
     this.loadJS('print.js', null);
-    this.loadJS('superstreamconsts.js', null);
-    this.loadJS("h264muxer_" + self.arch +".js", null);
+    this.loadJS('consts.js', null);
+    this.loadJS("muxer_" + self.arch +".js", null);
 }
 
 Remuxer.prototype.initVars = function(){

@@ -8,6 +8,8 @@
 
 #include "FileServer.h"
 
+using json = nlohmann::json;
+
 FileResponse::FileResponse(SinkConfig* pConfig)
 {
     m_pConfig = pConfig;
@@ -21,6 +23,16 @@ FileResponse::~FileResponse()
 
 }
 
+shared_ptr<http_response> FileResponse::getRESTfulResponse(string api) {
+    if(api.find("muselive") == string::npos)
+        return nullptr;
+
+    json jsonresp;
+    jsonresp["id"]    =   m_pConfig->outputID;
+    jsonresp["seg"]   =   m_pConfig->lastSegno;
+    return shared_ptr<http_response>(new string_response(jsonresp.dump()));
+}
+
 const shared_ptr<http_response> FileResponse::render_GET(const http_request& req)
 {
     //print_timestamp();
@@ -28,6 +40,10 @@ const shared_ptr<http_response> FileResponse::render_GET(const http_request& req
     string clientip = req.get_requestor();
 
     cout << "<" << clientip << "> ";
+    auto response = getRESTfulResponse(filepath);
+    if(response != nullptr)
+        return response;
+
     if(filepath.length() < 16) {
         cout << "Invalid Path: " << req.get_path() << endl;
         return sendError((char*)"Invalid Path", 404);
@@ -47,7 +63,7 @@ const shared_ptr<http_response> FileResponse::render_GET(const http_request& req
         usleep(100000);         // 100ms
     }
 
-    auto response = shared_ptr<file_response>(new file_response(uri, 200, "application/octet-stream"));
+    response = shared_ptr<file_response>(new file_response(uri, 200, "application/octet-stream"));
     response->with_header("Access-Control-Allow-Origin","*");
 
     return response;
