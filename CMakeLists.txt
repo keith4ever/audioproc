@@ -40,12 +40,12 @@ link_directories(
 )
 
 set(SOURCE_FILES
-        MediaIn.cpp
-        MediaPacket.cpp
-        MediaOut.cpp
-        audioproc.cpp
-        Queue.cpp
-        FileServer.cpp
+        src/MediaIn.cpp
+        src/MediaPacket.cpp
+        src/MediaOut.cpp
+        src/audioproc.cpp
+        src/Queue.cpp
+        src/FileServer.cpp
         )
 
 # sudo apt install libmicrohttpd-dev is required at the host
