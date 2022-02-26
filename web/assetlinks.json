@@ -1,9 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.alcacruz.cruztv",
-    "sha256_cert_fingerprints":
-    ["FD:9D:56:A2:2B:CC:AD:FA:11:4F:35:0C:2C:B0:B9:B5:EB:FC:37:2C:3C:B8:56:F3:55:40:BA:C0:92:B2:91:3D"]
-  }
-}]
