@@ -129,6 +129,62 @@ int getSampleRateIdx(int samplerate){
     return ret;
 }
 
+
+int getSampleRate(int data){
+    int ret = 0;
+
+    int idx = ((data - (1<<6)) >> 2);
+//    adts_header[2] = 1 << 6;
+//    adts_header[2] |= (gRemuxer->aRateIdx << 2);
+//    adts_header[2] |= (gRemuxer->aChannels & 0x4) >> 2;
+    switch (idx) {
+        case 0:
+            ret = 96000;
+            break;
+        case 1:
+            ret = 88200;
+            break;
+        case 2:
+            ret = 64000;
+            break;
+        case 3:
+            ret = 48000;
+            break;
+        case 4:
+            ret = 44100;
+            break;
+        case 5:
+            ret = 32000;
+            break;
+        case 6:
+            ret = 24000;
+            break;
+        case 7:
+            ret = 22050;
+            break;
+        case 8:
+            ret = 16000;
+            break;
+        case 9:
+            ret = 12000;
+            break;
+        case 10:
+            ret = 11025;
+            break;
+        case 11:
+            ret = 8000;
+            break;
+        case 12:
+            ret = 7350;
+            break;
+        default:
+            ret = 0;
+            break;
+    }
+    jsLog("Sample Rate is: %d", ret);
+    return ret;
+}
+
 int readData(WebRemuxer *decoder, uint8_t *data, int len) {
     int32_t ret = -1;
     int canReadLen = 0, bytesPos;
@@ -241,8 +297,16 @@ int openInputContext(WebRemuxer* remuxer) {
         jsLog("Could not find %s stream.", av_get_media_type_string(AVMEDIA_TYPE_AUDIO));
         return ret;
     }
-    remuxer->aIdx = 0;
 
+    AVCodecParameters* pCodecPar = remuxer->ifmtCtxt->streams[0]->codecpar;
+    if(pCodecPar->codec_type == AVMEDIA_TYPE_AUDIO) {
+        remuxer->aRateIdx = getSampleRateIdx(pCodecPar->sample_rate);
+        remuxer->aChannels = pCodecPar->channels;
+        int sampleFmt = (AVSampleFormat) pCodecPar->format;
+
+        jsLog("Audio sample rate: %d, channel: %d , format: %d, codec: %d",
+              remuxer->aRateIdx, remuxer->aChannels, sampleFmt, pCodecPar->codec_id);
+    }
     return ret;
 }
 
@@ -252,14 +316,25 @@ int roundUp(int numToRound, int multiple) {
 
 int calcCurrBufferTime(MTVsegment* seginfo){
     int currBufferedTime;
-    if(seginfo->numBytes[0] <= 0 && seginfo->numBytes[1] <= 0)
+    if(seginfo->numBytes <= 0)
         currBufferedTime = BUFF_LOW_WATERMARK + 1000;
     else {
         int buffTime = seginfo->audioBuffMSec;
-        currBufferedTime = buffTime + (2000  * (int64_t)gRemuxer->availInFifo)
-                            / (seginfo->numBytes[0] + seginfo->numBytes[1]);
+        currBufferedTime = buffTime + (1000 * (int64_t)gRemuxer->availInFifo / seginfo->numBytes);
     }
     return currBufferedTime;
+}
+
+int getAACSampleNum(unsigned char* data, int size){
+    int offset = 0;
+    int samplelen, samplenum = 0;
+    if(gRemuxer->sampleRate <= 0) gRemuxer->sampleRate = getSampleRate(data[2]);
+    while(offset <= size){
+        samplelen = (data[offset + 3] << 11) | (data[offset + 4] << 3) | (data[offset + 5]);
+        offset += samplelen;
+        samplenum++;
+    }
+    return samplenum;
 }
 
 #ifdef __cplusplus

@@ -30,6 +30,7 @@ shared_ptr<http_response> FileResponse::getRESTfulResponse(string api) {
     json jsonresp;
     jsonresp["id"]    =   m_pConfig->outputID;
     jsonresp["seg"]   =   m_pConfig->lastSegno;
+    jsonresp["sample"] =  m_pConfig->sampleNumPerSeg;
     cout << "replying : " << jsonresp.dump() << endl;
     return shared_ptr<http_response>(new string_response(jsonresp.dump()));
 }

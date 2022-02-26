@@ -64,7 +64,7 @@ run_pipsource()
    #-vcodec copy -acodec copy -f rtsp -rtsp_transport tcp rtsp://${IPADDR}:${PORT}/ac/live "
  
     echo "${CMD}"
-    sudo ffmpeg -f concat -safe 0 -re -i ${PORT}.txt -loglevel quiet \
+    sudo ffmpeg -f concat -safe 0 -re -i ${PORT}.txt \
     -c copy -f flac -listen 0 http://${IPADDR}:${PORT}/muselive
    #-c copy -f rtsp -rtsp_transport tcp rtsp://${IPADDR}:${PORT}/ac/live 
  

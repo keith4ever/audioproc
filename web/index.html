@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>CruzTV</title>
+    <title>MuseLive</title>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-touch-fullscreen" content="yes" />
@@ -24,6 +24,15 @@
         <label for="liveCheckbox" id="liveCheckboxLabel"> LIVE </label>
         <div id="uuidInput">
             <input type="text" id="inputUrl" style="width:300px"/>
+        </div>
+    </div>
+    <div id="videoInfo" class="playerInfoColor">
+        <div id="videoInfoLeft">
+            <div id="videoTitle" style="visibility:hidden"> Title </div>
+            <div id="videoAuthor" style="visibility:hidden"> Author </div>
+        </div>
+        <div id="videoInfoRight">
+            <div class="button" id="appButton" style="visibility:hidden" onclick="loadAppOrPlayStore()">OPEN IN APP</div>
         </div>
     </div>
     <div class="canvasDiv">
@@ -55,22 +64,13 @@
                     <button id="play-pause" onclick="onPlayButtonClick()"></button>
                     <button id="liveButton" onclick="onLiveButtonClick()">LIVE•</button>
                     <!--button id="stop" onclick="stopVideo(true)"></button -->
-                    <label id="timeLabel">00:00:00 / 00:00:00</label>
+                    <label id="timeLabel">00:00:00</label>
                     </div>
                 <div class="buttons" id="buttons-right">
                     <button id="share" onclick="onCopyLinkToClipboardClick()"></button>
                 </div>
             </div>
         </div>
-    </div>
-    </div>
-    <div id="videoInfo" class="playerInfoColor">
-    <div id="videoInfoLeft">
-      <div id="videoTitle" style="visibility:hidden"> Title </div>
-      <div id="videoAuthor" style="visibility:hidden"> Author </div>
-    </div>
-    <div id="videoInfoRight">
-      <div class="button" id="appButton" style="visibility:hidden" onclick="loadAppOrPlayStore()">OPEN IN APP</div>
     </div>
     </div>
   </div>

@@ -10,13 +10,12 @@ extern "C" {
 
 #include "libavutil/time.h"
 
-#define AUDIO_FLUSH_TERM    250
+#define AUDIO_FLUSH_TERM    100
 
 int gDownRetry = 0;
 
 ErrorCode procAudioPacket(AVPacket* packet){
     uint16_t frame_length = packet->size + 7;
-    int strIdx = gRemuxer->aIdx;
     unsigned char *adts_header = &gRemuxer->audioBuffer[gRemuxer->currAudBufPos];
 
     /* from:
@@ -36,29 +35,33 @@ ErrorCode procAudioPacket(AVPacket* packet){
 
     memcpy(&adts_header[7], packet->data, packet->size);
     gRemuxer->currAudBufPos += (packet->size + 7);
-    gRemuxer->readDTS[strIdx] = packet->dts;
+    gRemuxer->readDTS = packet->dts;
 
     av_packet_unref(packet);
-    gRemuxer->writtenPktNum[strIdx]++;
+    gRemuxer->writtenPktNum++;
 
-    if(gRemuxer->readDTS[strIdx] - gRemuxer->firstDTS[strIdx] >= AUDIO_FLUSH_TERM){
+    if(gRemuxer->firstDTS < 0) gRemuxer->firstDTS = gRemuxer->readDTS;
+    if(gRemuxer->readDTS - gRemuxer->firstDTS >= AUDIO_FLUSH_TERM){
+        jsLog("Sending %d", gRemuxer->currAudBufPos);
         gRemuxer->audioCallback(gRemuxer->audioBuffer, gRemuxer->currAudBufPos,
-                                gRemuxer->availInFifo, gRemuxer->readDTS[strIdx]);
+                                gRemuxer->availInFifo, gRemuxer->readDTS);
         gRemuxer->currAudBufPos = 0;
-        gRemuxer->firstDTS[strIdx] = gRemuxer->readDTS[strIdx];
+        gRemuxer->firstDTS = gRemuxer->readDTS;
     }
     return kErrorCode_Success;
 }
 
 EMSCRIPTEN_KEEPALIVE
-int downloadSegment(){
+int downloadSegment(int aQueueMs){
     if(gRemuxer == nullptr || gRemuxState != kStatePlay)
         return gSegInfo->nextSegNo;
 
+    gSegInfo->audioBuffMSec = aQueueMs;
+    bool isDownloading = gFetchAttr.userData != nullptr;
+#ifndef ADTS_FORMAT
     if(calcCurrBufferTime(gSegInfo) > BUFF_HIGH_WATERMARK)
         return gSegInfo->nextSegNo;
 
-    bool isDownloading = gFetchAttr.userData != nullptr;
     if(!gSegInfo->isLive && gSegInfo->endSeg < gSegInfo->nextSegNo){
         jsLog("end reached, segNo: %d", gSegInfo->nextSegNo);
         return -1;
@@ -78,12 +81,14 @@ int downloadSegment(){
             jsLog("end reached, retry#%d segNo: %d, endSegNo: %d", gDownRetry, gSegInfo->nextSegNo, gSegInfo->endSeg);
         }
     }
+#endif
 
     if(!isDownloading) downNext((void*)gSegInfo);
     return gSegInfo->nextSegNo;
 }
 
 int readWrite(int aQueueMs) {
+#ifndef  ADTS_FORMAT
     AVPacket srcpacket;
     int ret = 0;
     int64_t currDTS = 0;
@@ -94,7 +99,7 @@ int readWrite(int aQueueMs) {
 
     int numpackets = 0;
     do{
-        if (gRemuxState != kStatePlay || gRemuxer->availInFifo <= (512)
+        if (gRemuxState != kStatePlay || gRemuxer->availInFifo <= gSegInfo->numBytes
             || numpackets++ > 2){
             if(gRemuxer->errorCode != kErrorCode_EndReached)
                 break;
@@ -112,7 +117,7 @@ int readWrite(int aQueueMs) {
                       gRemuxer->availInFifo);
                 // keep on going.. these two func calls will reset AVERROR_EOF status
                 avio_seek(gRemuxer->ifmtCtxt->pb, 0, SEEK_SET);
-                avformat_seek_file(gRemuxer->ifmtCtxt, gRemuxer->aIdx,
+                avformat_seek_file(gRemuxer->ifmtCtxt, 0,
                             0, 0, currDTS, 0);
                 av_usleep(3000);
             }
@@ -124,9 +129,7 @@ int readWrite(int aQueueMs) {
             av_packet_unref(&srcpacket);
             break;
         }
-
-        // video
-        if(srcpacket.stream_index == gRemuxer->aIdx) {
+        if(srcpacket.stream_index == 0) {
             procAudioPacket(&srcpacket);
         } else {
             av_packet_unref(&srcpacket);
@@ -134,6 +137,9 @@ int readWrite(int aQueueMs) {
     }while(true);
 
     return gRemuxer->availInFifo;
+#else
+    return 0;
+#endif
 }
 
 void setError(int code){

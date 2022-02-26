@@ -33,14 +33,21 @@ extern "C" {
 #define MSG_UUID_NOTFOUND   22
 #define MSG_OPEN_REMUXER    8
 #define MAX_LIVE_RETRY      9
+#define ADTS_FORMAT         1
 
-#define BUFF_HIGH_WATERMARK     2000
-#define BUFF_LOW_WATERMARK      1000
+#ifdef ADTS_FORMAT
+#define EXTENSION           "aac"
+#else
+#define EXTENSION           "mkv"
+#endif
+
+#define BUFF_HIGH_WATERMARK     2500
+#define BUFF_LOW_WATERMARK      1300
 
 #define CUSTIO_BUFF_SIZE    (256 << 10)
 #define DEFAULT_FIFO_SIZE   (16 << 20)
 #define MAX_FIFO_SIZE       (32 << 20)
-#define PCM_BUFFER_SIZE     (2 << 20)
+#define PCM_BUFFER_SIZE     (1 << 20)
 
 #define     MAX_STREAM_BUFFER_SIZE      (4<<20)
 #define     MKV_CONTAINER               "matroska"
@@ -93,16 +100,16 @@ typedef struct WebRemuxer {
     unsigned int    audBuffSize;
     unsigned int    currAudBufPos;
 
-    int             aIdx;
     AudioCallback   audioCallback;
     MessageCallback msgCallback;
     int             availInFifo;
-    int64_t         firstDTS[2];
-    int64_t         readDTS[2];
+    int64_t         firstDTS;
+    int64_t         readDTS;
     int64_t         vFirstPTSOffset;
     int             aRateIdx;
+    unsigned int    sampleRate;
     int             aChannels;
-    int             writtenPktNum[2];
+    int             writtenPktNum;
     unsigned char   *inputBuffer;
     // For streaming.
     AVFifoBuffer    *fifo;
@@ -118,7 +125,7 @@ typedef struct MTVsegment {
     unsigned int    isLive;
     unsigned int    audioBuffMSec;
 
-    unsigned int    numBytes[2];
+    unsigned int    numBytes;
     unsigned int    firstSegNo;
     DownMode        mode;
     unsigned int    endSeg = 0;
@@ -146,6 +153,7 @@ void        freeInputContext(WebRemuxer* remuxer);
 int         openInputContext(WebRemuxer* remuxer);
 int         calcCurrBufferTime(MTVsegment* seginfo);
 void        setError(int code);
+int         getAACSampleNum(unsigned char* data, int size);
 #ifdef __cplusplus
 }
 #endif

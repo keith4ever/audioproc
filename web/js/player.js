@@ -2,8 +2,8 @@
 
 // TODO: Remove UI functions
 const segmentFrameBufferTime    = 2.0;
-const normalFrameBufferTime     = 1.0;
-const lowFrameBufferTime        = 0.5;
+const normalFrameBufferTime     = 1.5;
+const lowFrameBufferTime        = 0.8;
 
 function Player() {
     this.timeLabel          = null;
@@ -13,17 +13,15 @@ function Player() {
     this.displayDuration    = "00:00:00";
 
     this.baseUrl            = null;
-    this.srcIdx             = 0;
-    this.vnum               = 2;
-    this.segterm            = 3000;
     this.firstSec           = 0;
     this.videoReadyCounter  = 0;
+    this.samplePerSeg       = 0;
+    this.sampleRate         = 0;
     this.audioSource        = null;
     this.audioBuffer        = null;
     this.domAudio           = null;
     this.remuxer            = null;
     this.logger             = new Logger("Player");
-    this.playerSDK          = null;
     this.browser            = browserChrome;
     this.errorNo            = 0;
 
@@ -62,7 +60,7 @@ Player.prototype.onError = function (err) {
     this.firstSec += (this.segterm/1000); // we need to pass the faulty point
 
     this.stop(true);
-    this.logger.logInfo("Terminated CruzTV WASM");
+    this.logger.logInfo("Terminated WASM");
     if(this.errorNo++ > 2)
         setTimeout(window.location.reload(), 50);
 };
@@ -74,7 +72,7 @@ Player.prototype.unmute = function (){
     this.logger.logInfo("audio unmuted now..");
 }
 
-Player.prototype.play = function (url, firstSec) {
+Player.prototype.play = function (url, firstSec, samplePerSeg) {
     if (this.remuxer === null) {
         //this.initRemuxer();
         setTimeout(this.initRemuxer.bind(this, url, firstSec), 20);
@@ -83,6 +81,7 @@ Player.prototype.play = function (url, firstSec) {
 
     this.baseUrl    = url;
     this.firstSec   = ((firstSec > 0)? firstSec : 0);
+    this.samplePerSeg = samplePerSeg;
     this.logger.logInfo("Play: " + this.firstSec);
 
     var ret = {e: 0, m: "Success"};
@@ -90,6 +89,9 @@ Player.prototype.play = function (url, firstSec) {
     var success = true;
     do {
         if (this.playerState === constStatePlaying) {
+            break;
+        } else if (this.playerState === constStatePause) {
+            ret = this.resume();
             break;
         }
         if (!url) {
@@ -123,7 +125,7 @@ Player.prototype.play = function (url, firstSec) {
             if(!visible && me.visibleChanged){
                 me.logger.logInfo("visibility changed: " + visible);
                 me.visibleChanged = false;
-                setTimeout(me.displayLoop.bind(me), 10);
+                setTimeout(me.audioplayLoop.bind(me), 10);
             }
         });
 
@@ -136,7 +138,8 @@ Player.prototype.play = function (url, firstSec) {
 Player.prototype.stop = function (bSeek) {
     this.logger.logInfo("Stop");
 
-    if(playClicked) displayPlayButton(true);
+    this.pause();
+    displayPlayButton(true);
 
     if (this.playerState === constStateStop) {
         var ret = {e: -1,m: "Not playing"};
@@ -181,7 +184,7 @@ Player.prototype.stop = function (bSeek) {
 
     this.logger.logInfo("Deiniting remuxer");
     this.remuxer.deinitRemuxer();
-    this.logger.logInfo("Terminated CruzTV WASM");
+    this.logger.logInfo("Terminated WASM");
 
     this.initVars(false);
 
@@ -193,15 +196,12 @@ Player.prototype.initVars = function (){
     this.playerState        = constStateStop;
     this.remuxing           = false;
     this.aFrameBuffer       = [];
-    this.srcIdxArray        = [];
     this.buffering          = false;
     this.downloading        = false;
     this.endReached         = false;
     this.visible            = true;
     this.visibleChanged     = false;
     this.aBuffAppending     = false;
-    this.lowBuffLevel       = lowFrameBufferTime;
-    this.highBuffLevel      = normalFrameBufferTime;
 };
 
 Player.prototype.getState = function () {
@@ -224,8 +224,9 @@ Player.prototype.onInitRemuxer = function () {
     }
 
     this.logger.logInfo("Init remuxer..");
-    this.onVideoParam();
+    this.onParam();
     this.logger.logInfo("Start Playing now..");
+    this.resume();
 
     if(this.videoReadyCounter <= 0) {
         const onVideoReady = new CustomEvent("onVideoReady", {
@@ -247,6 +248,31 @@ Player.prototype.onInitRemuxer = function () {
         document.dispatchEvent(onSeekEnd);
     }
     this.videoReadyCounter++;
+};
+
+Player.prototype.resume = function () {
+    if(this.playerState === constStatePlaying) return;
+
+    this.playerState = constStatePlaying;
+    btnPlayPause.className = "pause";
+    this.startRemuxing();
+    this.startSegDownload();
+    this.startTrackTimer();
+    this.audioplayLoop(); // it will resume playing when there is enough buffer in displayLoop
+};
+
+Player.prototype.pause = function () {
+    if(this.playerState !== constStatePlaying && this.playerState !== constStateInitializing)
+        return;
+
+    this.playerState = constStatePause;
+    btnPlayPause.className = "play";
+    this.pauseRemuxing();
+    this.stopSegDownload();
+    if(this.domAudio)
+        this.domAudio.pause();
+
+    this.stopTrackTimer();
 };
 
 Player.prototype.onMediaEvent = function (msg){
@@ -273,28 +299,31 @@ Player.prototype.addAudioSourceBuffer = function() {
         me.logger.logError(e);
     });
     this.audioBuffer.addEventListener('onabort', function (){
-        me.logger.logError("video buffer aborted");
+        me.logger.logError("audio buffer aborted");
     });
-    //this.audioSource.duration = (this.duration/1000);
-    //this.audioBuffer.duration = (this.duration/1000);
-    //this.domAudio.duration = (this.duration/1000);
+    this.audioSource.duration = 7200;
+    this.audioBuffer.duration = 7200;
+    this.domAudio.duration = 7200;
     this.audioBuffer.mode = 'sequence';
-    this.logger.logInfo("HTML audio is set now" );
+    this.logger.logInfo("Audio source is now open.." );
 }
 
-Player.prototype.onVideoParam = function () {
+Player.prototype.onParam = function () {
     if (this.playerState === constStateStop) {
         return;
     }
 
     var me = this;
-    this.domAudio.src = URL.createObjectURL(this.audioSource);
     this.audioSource.addEventListener('sourceopen', function () {
         me.addAudioSourceBuffer();
     });
     this.audioSource.addEventListener('sourceended', function () {
         me.logger.logInfo("AudioSource ended..");
-    })
+    });
+    this.audioSource.addEventListener('sourceclose', function () {
+        me.logger.logInfo("AudioSource closed..");
+    });
+    this.domAudio.src = URL.createObjectURL(this.audioSource);
     //this.domAudio.autoplay = true;
     this.domAudio.addEventListener('onerror', function (e){
         me.logger.logError(e);
@@ -313,12 +342,13 @@ Player.prototype.to2decimal = function(num){
 };
 
 Player.prototype.calcBufTime = function (){
-    let dom = this.domAudio;
-    if(dom === null) return 0;
+    if(this.domAudio === null) return 0;
 
-    const currentTime = dom.currentTime;
-    const startTime = (dom.buffered.length>0) ? dom.buffered.start(0) : 0;
-    const endTime = (dom.buffered.length>0) ? dom.buffered.end(0): 0;
+    const currentTime = this.domAudio.currentTime;
+    const startTime = (this.domAudio.buffered.length>0) ?
+        this.domAudio.buffered.start(0) : 0;
+    const endTime = (this.domAudio.buffered.length>0) ?
+        this.domAudio.buffered.end(0): 0;
     // this endTime is always same as this.audioBuffer.timestampOffset
     var bufTime = (endTime - currentTime);
     if(bufTime <= 0 && (currentTime - this.timeOffset > 5.0 )){
@@ -327,58 +357,53 @@ Player.prototype.calcBufTime = function (){
     return this.to2decimal(bufTime);
 };
 
-Player.prototype.addFrameBuffer = function (dts) {
-    let dom;
-    let buffer;
-    let frameBuffer;
-
+Player.prototype.addFrameBuffer = function () {
     if(this.playerState !== constStatePlaying) return false;
 
-    dom = this.domAudio;
-    buffer = this.audioBuffer;
-    frameBuffer = this.aFrameBuffer;
     if(this.domAudio === null || this.audioBuffer === null
         || this.audioBuffer.updating){
         return false;
     }
 
-    const currentTime = this.to2decimal(dom.currentTime);
-    const startTime = (dom.buffered.length>0) ? this.to2decimal(dom.buffered.start(0)) : 0;
+    const currentTime = this.to2decimal(this.domAudio.currentTime);
+    const startTime = (this.domAudio.buffered.length>0) ?
+        this.to2decimal(this.domAudio.buffered.start(0)) : 0;
     // this endTime is always same as this.audioBuffer.timestampOffset
-    const endTime = (dom.buffered.length>0) ? this.to2decimal(dom.buffered.end(0)): 0;
+    const endTime = (this.domAudio.buffered.length>0) ?
+        this.to2decimal(this.domAudio.buffered.end(0)): 0;
 
-    if (this.timeOffset === constInitAudioOffset && dts >= 0) {
-        this.timeOffset = (dts/1000) - this.domAudio.currentTime;
-        this.logger.logInfo("First video frame time: " + (dts/1000)
+    var dts;
+    if (this.timeOffset === constInitAudioOffset) {
+        dts = (this.samplePerSeg * this.firstSec) / this.sampleRate;
+        this.timeOffset = dts - this.domAudio.currentTime;
+        this.logger.logInfo("First frame time: " + dts
             + " - currentTime: " + this.domAudio.currentTime);
     }
 
-    var norDTS = this.to2decimal(((dts / 1000) - this.timeOffset));
+    var norDTS = this.to2decimal((dts - this.timeOffset));
 
     this.aBuffAppending = true;
-
     //remove too big of buffer.. once it's removed, it'll also invoke 'updateend' event
     var errorFlush = 0;
-    if(currentTime > 0 && dom.paused ){
+    if(currentTime > 0 && this.domAudio.paused ){
         this.logger.logInfo("Buffer stuck, buf length: "
             + (endTime - currentTime) + ", curr: " + currentTime
             + ", end: " + endTime + ", dts: " + norDTS);
         this.remuxer.setRemuxError(1);
         // now resetting videoSource with new videoBuffer
         errorFlush = 1;
-    } else
-    if (startTime < (endTime - constBufferTime)) {
-        buffer.remove(0, endTime - constBufferTime/2);
+    } else if (startTime < (endTime - constBufferTime)) {
+        this.audioBuffer.remove(0, endTime - constBufferTime/2);
         return true;
     }
 
     let length = 0;
     let i = 0;
     let item = null;
-    let buflen = frameBuffer.length;
+    var bufnum = this.aFrameBuffer.length;
 
-    for(; i < buflen; i++){
-        item = frameBuffer[i];
+    for(; i < bufnum; i++){
+        item = this.aFrameBuffer[i];
         length += item.d.length;
     }
     if(length <= 0) return true;
@@ -386,27 +411,29 @@ Player.prototype.addFrameBuffer = function (dts) {
     // Create a new array with total length and merge all source arrays.
     let mergedArray = new Uint8Array(length);
     let offset = 0;
-    for(i = 0; i < buflen; i++){
-        item = frameBuffer[i];
+    for(i = 0; i < bufnum; i++){
+        item = this.aFrameBuffer[i];
         mergedArray.set(item.d, offset);
         offset += item.d.length;
     }
 
     if(errorFlush <= 0){
-        buffer.appendBuffer(mergedArray);
+        this.audioBuffer.appendBuffer(mergedArray);
     }
 
-    for(i = 0; i < buflen; i++){
-        delete frameBuffer[0];
-        frameBuffer.shift();
+    for(i = 0; i < bufnum; i++){
+        delete this.aFrameBuffer[0];
+        this.aFrameBuffer.shift();
     }
-    delete mergedArray;
+    //delete mergedArray;
     return true;
 };
 
 Player.prototype.onFrameInput = function (frame) {
+    if(this.sampleRate <= 0)
+        this.sampleRate = frame.f;
     this.aFrameBuffer.push(frame);
-    this.addFrameBuffer(frame.s, frame.a);
+    this.addFrameBuffer();
 
     if (this.playerState === constStatePlaying && this.buffering) {
         //this.hideLoading();
@@ -432,12 +459,13 @@ Player.prototype.onOtherMsg = function (msg, data) {
 
 Player.prototype.playPromise = function(abufTime) {
     if(this.domAudio === null) return;
-    if(this.domAudio.paused && abufTime >= this.lowBuffLevel + 0.2){
+    if(this.domAudio.paused && abufTime >= lowFrameBufferTime){
         var audioPromise  = this.domAudio.play();
 
         var me = this;
         if (audioPromise !== undefined) {
             audioPromise.then(function() {
+                me.logger.logInfo("domAudio playpromise is set..");
                 // should we set a flag indicating successful play from promise?
             }).catch(function(error) {
                 me.logger.logError("audio play failed: " + error);
@@ -446,25 +474,22 @@ Player.prototype.playPromise = function(abufTime) {
     }
 }
 
-Player.prototype.displayLoop = function() {
+Player.prototype.audioplayLoop = function() {
     if (this.playerState === constStatePlaying) {
-        if(this.visible)
-            requestAnimationFrame(this.displayLoop.bind(this));
-        else{
-            setTimeout(this.displayLoop.bind(this), 50);
-        }
+        setTimeout(this.audioplayLoop.bind(this), 50);
     }
 
     if (this.playerState !== constStatePlaying || this.buffering) {
-        //self.logger.logInfo("Stopping display loop");
+        //this.logger.logInfo("Stopping audio play loop");
         return;
     }
 
-    var abufTime = this.calcBufTime(1);
-    while(this.domAudio.currentTime > 20 && !this.endReached){
-        if(!this.domAudio.paused && abufTime < (this.lowBuffLevel/3)){
+    var abufTime = this.calcBufTime();
+    while(this.domAudio.currentTime > 0.1 && !this.endReached){
+        if(!this.domAudio.paused && abufTime < (lowFrameBufferTime/2)){
             this.domAudio.pause();
-        }
+        } else break;
+
         this.logger.logInfo("pause, buffer length: "
             + this.to2decimal(abufTime));
         return;
@@ -490,12 +515,12 @@ Player.prototype.updateTrackTime = function () {
     if (this.playerState == constStatePlaying && this.domAudio) {
         var currentPlayTime = this.domAudio.currentTime + this.timeOffset;
         if (this.timeTrack) {
-            var timePos = currentPlayTime / this.duration * 1000;
+            var timePos = currentPlayTime; // / this.duration * 1000;
             this.timeTrack.style.width = timePos * 100 + "%";
         }
 
         if (this.timeLabel) {
-            this.timeLabel.innerHTML = this.formatTime(currentPlayTime) + " / " + this.displayDuration;
+            this.timeLabel.innerHTML = this.formatTime(currentPlayTime); // + " / " + this.displayDuration;
         }
     }
 };
@@ -543,10 +568,11 @@ Player.prototype.stopSegDownload = function () {
 Player.prototype.reportFrameBuffTime = function(){
     if(!this.remuxer) return;
 
-    this.remuxer.downloadSegment();
+    /*this.remuxer.downloadSegment();
 
     if(this.downloading)
         setTimeout(this.reportFrameBuffTime.bind(this), 500);
+     */
 };
 
 Player.prototype.registerVisibilityEvent = function (callbackfunc) {

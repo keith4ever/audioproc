@@ -22,8 +22,10 @@
 #define FILESINK_TERM       60
 #define MKV_TIMEBASE        {1,1000}
 #define MAX_STREAM_BUFFER_SIZE  (4<<20)
-#define OUTFORMAT           "matroska"
-#define OUTEXTENSION        ".mkv"
+#define MKVFORMAT           "matroska"
+#define MKVEXTENSION        "mkv"
+#define ADTSFORMAT          "adts"
+#define AACEXTENSION        "aac"
 
 #ifdef av_err2str
 #undef av_err2str
@@ -41,6 +43,7 @@ typedef struct _SinkConfig
     uint16_t    httpPort;
     int         httpFilecheckterm;
     int         lastSegno;
+    int         sampleNumPerSeg;
 }SinkConfig;
 
 #ifdef  DEBUG

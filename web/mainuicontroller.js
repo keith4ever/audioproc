@@ -71,18 +71,14 @@ function displayControlButtons(show){
 
 function displaySeekButtons(show){
   let trackBar = document.getElementById("trackBar");
-  let forward = document.getElementById("forward");
-  let backward = document.getElementById("backward");
   let timeLabel = document.getElementById("timeLabel");
 
   if(show){
     trackBar.style.visibility = "visible";
-    forward.style.display = backward.style.display = timeLabel.style.display = "flex";
     trackBar.style.marginTop = "10px";
   }
   else {
     trackBar.style.visibility = "hidden";
-    forward.style.display = backward.style.display = timeLabel.style.display = "none";
     trackBar.style.marginTop = "0px";
   }
 }
@@ -102,19 +98,14 @@ function togglePlayPause(showPlay){
   }
 }
 
-function addVideoListItem(title, author, imageLink, uuid){
-
-}
-
 function setUpTrack(){
   // timeTrack = document.getElementById("timeTrack");
   // timeLabel = document.getElementById("timeLabel");
   let trackBar  = document.getElementById("trackBar");
-  let me = this;
   trackBar.addEventListener("click", function(e) {
-    if(me.player !== null) {
-      if (!(me.player.getState() === constStatePlaying
-          || me.player.getState() === constStatePause))
+    if(myPlayer !== null) {
+      if (!(myPlayer.getState() === constStatePlaying
+          || myPlayer.getState() === constStatePause))
         return;
     }
     else{
@@ -122,6 +113,8 @@ function setUpTrack(){
     }
     let seekPos = e.offsetX / this.offsetWidth;
     timeTrack.style.width = seekPos * 100 + "%";
+    let seekTimeSec = seekPos * 7200;
+    timeLabel.innerHTML = formatTime(seekTimeSec);
   })
 }
 
@@ -152,9 +145,15 @@ function resetTrack(){
 }
 
 function updateTrackTime() {
-  if (this.player.getState() === constStatePlaying) {
-    let currentPlayTime = this.player.getCurrentTime();
-    if(currentPlayTime < 0) return;
+  if (myPlayer.getState() !== constStatePlaying) return;
+  let currentPlayTime = myPlayer.getCurrentTime() + myPlayer.getTimeOffset();
+  if(currentPlayTime < 0) return;
+
+  if (timeTrack) {
+    timeTrack.style.width = 100 + "%";
+  }
+  if (timeLabel) {
+    timeLabel.innerHTML = formatTime(currentPlayTime);
   }
 };
 
@@ -179,12 +178,6 @@ function setupMainUI(){
     togglePlayPause(false);
   });
 
-  document.addEventListener("onSeekEnd", (event) => {
-    //me.util.log("constructor", "onSeekEnd");
-    hideLoading();
-    startTrackTimer();
-  });
-
   document.addEventListener("visibilitychange", function() {
     if (document.hidden){
       //window.alert("hidden");
@@ -196,15 +189,15 @@ function setupMainUI(){
 
   document.addEventListener("onVideoEnd", (event) => {
     let fn = "onVideoEnd";
-    logger.logInfo(fn);
+    //logger.logInfo(fn);
     hideLoading();
     showVideoMessage("The broadcast you were watching has ended");
-    displayControlButtons(false);
+    //displayControlButtons(false);
   });
 
   document.addEventListener("onSuperStreamApiError", (event) => {
     showVideoMessage("Unable to load content");
-    displayControlButtons(false);
+    //displayControlButtons(false);
   });
 
   setupMouseEvents();

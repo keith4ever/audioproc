@@ -36,12 +36,13 @@ ErrorCode initRemuxer(unsigned char* url, int startSec) {
 
         // 3sec is just the default for now
         gSegInfo->firstSegNo = startSec;
-        gRemuxer->readDTS[1] = gRemuxer->readDTS[0] = AV_NOPTS_VALUE;
-
+        gSegInfo->isLive    = true;
+        gRemuxer->firstDTS  = gRemuxer->readDTS   = -1;
+#ifndef  ADTS_FORMAT
         gRemuxer->audioBuffer = (unsigned char *) av_mallocz(PCM_BUFFER_SIZE);
         gRemuxer->audBuffSize = PCM_BUFFER_SIZE;
         jsLog("Initial PCM buffer size %d.", gRemuxer->audBuffSize);
-
+#endif
         char* pos = (char*)strrchr((const char*)url, '/');
         if (pos == nullptr) {
             jsLog("wrong stream URL error: %s", url);
@@ -80,6 +81,7 @@ ErrorCode deinitRemuxer(int bRevisit) {
 
         gRemuxState = kStateStop;
 
+#ifndef  ADTS_FORMAT
         freeInputContext(gRemuxer);
         //jsLog("Input closed.");
 
@@ -93,6 +95,7 @@ ErrorCode deinitRemuxer(int bRevisit) {
         if (gRemuxer->fifo != nullptr) {
             av_fifo_freep(&gRemuxer->fifo);
         }
+#endif
         free(gSegInfo->baseUrl);
         free(gSegInfo->uuid);
         av_freep(&gSegInfo);
@@ -101,7 +104,6 @@ ErrorCode deinitRemuxer(int bRevisit) {
         gRemuxer = nullptr;
         jsLog("Remuxer destroyed..");
     } while (0);
-
     av_log_set_callback(nullptr);
 
     return kErrorCode_Success;
@@ -118,6 +120,7 @@ ErrorCode setCallBack(long audioCallback, long msgCallback) {
 
 ErrorCode openRemuxer() {
     ErrorCode ret = kErrorCode_Success;
+
     do {
         if(gRemuxState != kStateInit)
             break;
@@ -132,7 +135,9 @@ ErrorCode openRemuxer() {
             jsLog("video with the UUID doesn't exist");
             break;
         }
+#ifndef  ADTS_FORMAT
         openInputContext(gRemuxer);
+#endif
         gRemuxState = kStatePlay;
     } while (0);
 

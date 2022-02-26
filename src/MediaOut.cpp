@@ -33,16 +33,16 @@ bool MediaOut::OpenSegfile() {
     int ret;
 
     // setting next segment file name here
-    m_pSinkConfig->lastSegno = m_fileSerial;
+    m_pSinkConfig->lastSegno = m_fileSerial-1;
     if(m_fileSerial >= 200){
-        sprintf(m_outsegfile, "%s/%s_%d.mkv", m_pSinkConfig->outputID,
-                m_pSinkConfig->outputID, (m_fileSerial-200));
+        sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
+                m_pSinkConfig->outputID, (m_fileSerial-200), AACEXTENSION);
         remove(m_outsegfile);
     }
-    sprintf(m_outsegfile, "%s/%s_%d.mkv", m_pSinkConfig->outputID,
-            m_pSinkConfig->outputID, m_fileSerial++);
+    sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
+            m_pSinkConfig->outputID, m_fileSerial++, AACEXTENSION);
     ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,
-                       "matroska", m_outsegfile);
+                       ADTSFORMAT, m_outsegfile);
     if(ret < 0)
         FUNCPRINT "could not open output file: " << av_err2str(ret) << endl;
 
@@ -194,6 +194,7 @@ bool MediaOut::CloseSegfile(bool bForce) {
 
     AVStream *outStream = m_pFileContext->streams[0];
     outStream->nb_frames = (int)(m_totalSampleNum - m_segSampleNum);
+    m_pSinkConfig->sampleNumPerSeg = outStream->nb_frames;
     outStream->duration = (m_totalSampleNum - m_segSampleNum) * 1000 / m_pAudioCodecCtx->sample_rate;
     m_segSampleNum = m_totalSampleNum;
 

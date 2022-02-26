@@ -24,7 +24,6 @@ function Remuxer() {
     self.remuxer            = this;
     this.player             = null;
     this.url                = null;
-    this.prevTime           = new Date(Date.now());
     this.initVars();
     this.locationPath       = "js/";
     this.loadJS('print.js', null);
@@ -37,9 +36,7 @@ Remuxer.prototype.initVars = function(){
     this.cacheBuffer        = null;
     this.remuxing           = false;
     this.reachedEnd         = false;
-    this.fps                = 0;
     this.firstSegNo         = 0;
-    this.prevPlayTime       = 0;
 };
 
 Remuxer.prototype.loadJS = function (url, callback) {
@@ -130,38 +127,25 @@ Remuxer.prototype.handleError = function (e) {
 }
 
 Remuxer.prototype.setRemuxError = function (e) {
-    Module._h264setError(e);
+    Module._setError(e);
 }
 
 Remuxer.prototype.readWrite = function () {
     if(!this.remuxing) return;
 
-    let currPlayTime = this.player.domAudio.currentTime;
-    let currTime = new Date(Date.now());
-    var timeDiff = (currTime - this.prevTime);
-    let delay = 20, repeat = 0, bufferTimeLimit;
+    let delay = 20, repeat = 0;
 
-    if((currPlayTime - this.prevPlayTime)*1000 < 5){
-        if(timeDiff >= 30) // for the past 50ms, there was no progress in play
-            bufferTimeLimit = segmentFrameBufferTime;
-        else bufferTimeLimit = this.player.highBuffLevel;
-    }
-    else{
-        bufferTimeLimit = this.player.highBuffLevel;
-        this.prevTime = currTime;
-        this.prevPlayTime = currPlayTime;
-    }
-
-    var aBuffTime = this.player.calcBufTime(1);
+    var aBuffTime = this.player.calcBufTime();
     try{
-        while((aBuffTime <= bufferTimeLimit || this.reachedEnd)
-            && repeat++ < 3) {
-            var ret = Module._readWrite(aBuffTime * 1000);
+        while((aBuffTime <= normalFrameBufferTime || this.reachedEnd)
+            && repeat++ < 5) {
+            //var ret = Module._readWrite(aBuffTime * 1000);
+            var ret = Module._downloadSegment(aBuffTime * 1000);
             if (ret > 0) this.dataInFifo = ret; // dataInFifo is same as the one in h265player.js
 
-            if ((aBuffTime > this.player.lowBuffLevel) && !this.reachedEnd)
+            if ((aBuffTime > lowFrameBufferTime) && !this.reachedEnd)
                 break;
-            aBuffTime = this.player.calcBufTime(1);
+            aBuffTime = this.player.calcBufTime();
         }
 
         if (this.remuxing) { // after each video frame decoding, invoke next decode() by the time diff
@@ -203,7 +187,6 @@ Remuxer.prototype.setCallback = function () {
         var outArray = Module.HEAPU8.subarray(buff, buff + size);
         var data = new Uint8Array(outArray);
         var objData = {
-            a: 1,
             s: timestamp,
             f: fifo,
             d: data

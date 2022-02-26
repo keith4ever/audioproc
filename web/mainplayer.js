@@ -2,6 +2,7 @@ let classNameMain = "mainPlayer.js";
 let lockButtons = false;
 let audiouuid = null;
 let audiosegment = 0;
+let samplenum = 0;
 let myUtil = null;
 let myPlayer = null;
 let myApi = null;
@@ -31,7 +32,7 @@ function playVideo() {
 
     let currentState = myPlayer.getState();
     if(currentState == constStateStop) {
-        myPlayer.play(myApi.apiBaseLink + "/" + audiouuid, audiosegment);
+        myPlayer.play(myApi.apiBaseLink + "/" + audiouuid, audiosegment, samplenum);
         myPlayer.unmute();
         showLoading();
     }
@@ -82,6 +83,7 @@ function showVideoMessage(msg){
 function handleGetLiveInfo(data){
     const obj = JSON.parse(data);
     audiouuid = obj.id;
-    audiosegment = obj.seg;
+    audiosegment = obj.seg - 2;
+    samplenum = obj.sample;
     playVideo();
 }

@@ -11,12 +11,19 @@ extern "C" {
 #include "libavutil/time.h"
 
 void downloadSuccess(emscripten_fetch_t *fetch) {
+    int samplenum = 0;
     switch (gSegInfo->mode) {
         case kDownFirst: {
             jsLog("Finished downloading first %llu bytes", fetch->numBytes);
             // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-            gSegInfo->numBytes[1] = fetch->numBytes;
+            gSegInfo->numBytes = fetch->numBytes;
+#ifdef  ADTS_FORMAT
+            getAACSampleNum((unsigned char*)fetch->data, fetch->numBytes);
+            gRemuxer->audioCallback((unsigned char *)fetch->data, fetch->numBytes,
+                                    gRemuxer->sampleRate, gSegInfo->firstSegNo);
+#else
             fillData((unsigned char *) fetch->data, fetch->numBytes);
+#endif
             gSegInfo->nextSegNo = gSegInfo->firstSegNo + 1;
             if(gRemuxer->msgCallback)
                 gRemuxer->msgCallback(MSG_OPEN_REMUXER, nullptr, 0);
@@ -30,9 +37,13 @@ void downloadSuccess(emscripten_fetch_t *fetch) {
                   gSegInfo->nextSegNo, (int) (fetch->numBytes >> 10), gSegInfo->audioBuffMSec,
                   (gRemuxer->availInFifo >> 10), currBufferedTime, gSegInfo->endSeg);
             // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-            gSegInfo->numBytes[0] = gSegInfo->numBytes[1];
-            gSegInfo->numBytes[1] = fetch->numBytes;
+            gSegInfo->numBytes = fetch->numBytes;
+#ifdef  ADTS_FORMAT
+            gRemuxer->audioCallback((unsigned char *)fetch->data, fetch->numBytes,
+                                    gRemuxer->sampleRate, gSegInfo->nextSegNo);
+#else
             fillData((unsigned char *) fetch->data, fetch->numBytes);
+#endif
             gSegInfo->nextSegNo++;
             break;
         }
@@ -54,8 +65,8 @@ void downloadFail(emscripten_fetch_t *fetch) {
             emscripten_fetch_close(fetch);
             gSegInfo->firstSegNo++;
 
-            sprintf(nextUrl, "%s/%s_%d.mkv",
-                    gSegInfo->baseUrl, gSegInfo->uuid, gSegInfo->firstSegNo);
+            sprintf(nextUrl, "%s/%s_%d.%s",
+                    gSegInfo->baseUrl, gSegInfo->uuid, gSegInfo->firstSegNo, EXTENSION);
 
             gFetchAttr.userData = gSegInfo;
             emscripten_fetch(&gFetchAttr, nextUrl);
@@ -81,8 +92,8 @@ void downloadFail(emscripten_fetch_t *fetch) {
                 break;
             }
 
-            sprintf(nextUrl, "%s/%s_%d.mkv",
-                        gSegInfo->baseUrl, gSegInfo->uuid, gSegInfo->nextSegNo);
+            sprintf(nextUrl, "%s/%s_%d.%s",
+                        gSegInfo->baseUrl, gSegInfo->uuid, gSegInfo->nextSegNo, EXTENSION);
 
             emscripten_fetch(&gFetchAttr, nextUrl);
             break;
@@ -107,8 +118,8 @@ void *downFirst(void *arg) {
 
     char nextUrl[256];
 
-    sprintf(nextUrl, "%s/%s_%d.mkv",
-            seginfo->baseUrl, seginfo->uuid, seginfo->firstSegNo);
+    sprintf(nextUrl, "%s/%s_%d.%s",
+            seginfo->baseUrl, seginfo->uuid, seginfo->firstSegNo, EXTENSION);
 
     gSegInfo->mode = kDownFirst;
     gFetchAttr.userData = seginfo;
@@ -122,21 +133,18 @@ void *downNext(void *arg) {
     if (seginfo == nullptr || gFetchAttr.userData != nullptr)
         return nullptr;
 
+#ifndef ADTS_FORMAT
     int currBufferedTime = calcCurrBufferTime(seginfo);
     if (currBufferedTime > BUFF_HIGH_WATERMARK) return nullptr;
-
+#endif
     char nextUrl[256];
     seginfo->mode = kDownNext;
 
     gFetchAttr.userData = seginfo;
     //jsLog("Next down: %s", nextUrl);
     // set header key:value at gFetchAttr.requestHeaders
-#if     D1_DEBUG
-    if(gFSDDown.d1w * gFSDDown.d1h > 0) // debug instrumentation code
-        seginfo->bDown += ((seginfo->nextSegNo % 4 == 3) ? 1 : 0);
-#endif
-    sprintf(nextUrl, "%s/%s_%d.mkv",
-                seginfo->baseUrl, seginfo->uuid, seginfo->nextSegNo);
+    sprintf(nextUrl, "%s/%s_%d.%s",
+                seginfo->baseUrl, seginfo->uuid, seginfo->nextSegNo, EXTENSION);
 
     emscripten_fetch(&gFetchAttr, nextUrl);
     return nullptr;
