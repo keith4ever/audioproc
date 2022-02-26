@@ -1,7 +1,7 @@
 // Constructor
 function Api(){
   //alert("created super stream api");
-    this.apiBaseLink = "http://10.1.10.43:8080";
+    this.apiBaseLink = "http://test.cruz.tv:8080";
     this.className = "Api";
     this.util = new Util(this.className);
     this.uuid = null;
@@ -19,9 +19,8 @@ Api.prototype.makeRequest = function(link, callback) {
         fetch(link, {
             method: "GET",
         })
-            .then(response => response.json())
+            .then(response => response.text())
             .then(data => {
-                me.util.log(data);
                 printJson(data);
                 callback(data);
             })
@@ -42,7 +41,5 @@ Api.prototype.makeRequest = function(link, callback) {
 }
 
 function printJson(data){
-  for(let prop in data){
-    console.log(prop + ": " + data[prop]);
-  }
+    console.log(data);
 }

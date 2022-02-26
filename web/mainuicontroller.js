@@ -174,7 +174,6 @@ function setupMainUI(){
     startTrackTimer();
 
     displayLiveButton(true);
-    displaySeekButtons(false);
     changeLiveColorButton(true);
 
     togglePlayPause(false);

@@ -34,6 +34,11 @@ bool MediaOut::OpenSegfile() {
 
     // setting next segment file name here
     m_pSinkConfig->lastSegno = m_fileSerial;
+    if(m_fileSerial >= 200){
+        sprintf(m_outsegfile, "%s/%s_%d.mkv", m_pSinkConfig->outputID,
+                m_pSinkConfig->outputID, (m_fileSerial-200));
+        remove(m_outsegfile);
+    }
     sprintf(m_outsegfile, "%s/%s_%d.mkv", m_pSinkConfig->outputID,
             m_pSinkConfig->outputID, m_fileSerial++);
     ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,

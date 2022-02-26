@@ -30,6 +30,7 @@ shared_ptr<http_response> FileResponse::getRESTfulResponse(string api) {
     json jsonresp;
     jsonresp["id"]    =   m_pConfig->outputID;
     jsonresp["seg"]   =   m_pConfig->lastSegno;
+    cout << "replying : " << jsonresp.dump() << endl;
     return shared_ptr<http_response>(new string_response(jsonresp.dump()));
 }
 
@@ -41,8 +42,10 @@ const shared_ptr<http_response> FileResponse::render_GET(const http_request& req
 
     cout << "<" << clientip << "> ";
     auto response = getRESTfulResponse(filepath);
-    if(response != nullptr)
+    if(response != nullptr) {
+        response->with_header("Access-Control-Allow-Origin","*");
         return response;
+    }
 
     if(filepath.length() < 16) {
         cout << "Invalid Path: " << req.get_path() << endl;
