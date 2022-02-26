@@ -33,26 +33,10 @@ echo ""
 echo "** emsdk configure **"
 echo ""
 
-#  --as=./emsdk/upstream/bin/llvm-as \
-#  --ar=./emsdk/upstream/bin/llvm-ar \
-#  --ranlib=./emsdk/upstream/bin/llvm-ranlib \
-#     --nm="./emsdk/upstream/bin/llvm-nm -g" \
-#-s PTHREAD_POOL_SIZE=8
-#    --enable-demuxer=mov \
-#    --enable-demuxer=flv \
-# -msse for x86 SSE instruction set -msimd128
-# -pthread means  -s USE_PTHREADS=1
-#  --closure 1
-#    --enable-gpl \
-#    --enable-version3 \
-#    --enable-decoder=h264 \
-#  --arch=arm8 \
-#    --arch=x86_64 \
-
 CFLAGS="-s USE_PTHREADS=1 -O3 -Wl,--export=__heap_base -Wl,--export=__data_end -Wl,--export=malloc -Wl,--export=free "
 LDFLAGS="$CFLAGS"
-emconfigure ffmpeg/configure \
-  --prefix=./dist \
+emconfigure src/configure \
+  --prefix=./webffmpeg \
   --enable-cross-compile \
   --target-os=none \
   --arch=${ARCH} \
