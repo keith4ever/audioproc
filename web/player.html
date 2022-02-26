@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CruzTV</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="format-detection" content="telephone=no, email=no" />
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" type="text/css" href="css/all.css">
+</head>
+
+<body>
+  <div id="mainHeader">
+    <div id="mainLogo" class="button" onclick="openHomePageClick()" title="Home" onclick="openHomePage()"></div>
+    <div id="easterEgg" onclick="onEasterEggClick()"></div>
+  </div>
+  <div id="mainContainer">
+    <div id="mainContainerInnerLeft">
+    <div class="container" id="videoPlayer">
+    <div class="sideBar" id="testBar">
+        <span class="no-padding">
+            <img src="img/home.png" style="visibility: hidden" class="left button" id="btnHome" title="Visit My Homepage" onclick="openHomePage()" />
+        </span>
+        <button class="button" id="uuidInputSet" onclick="onUuidInputClick">SET</button>
+        <input type="checkbox" id="liveCheckbox" name="liveCheckbox" value="Live">
+        <label for="liveCheckbox" id="liveCheckboxLabel"> LIVE </label>
+        <div id="uuidInput">
+            <input type="text" id="inputUrl" style="width:300px"/>
+        </div>
+    </div>
+    <div class="canvasDiv">
+        <div id="videoMessage">
+            <p>Sample Video Message</p>
+        </div>
+        <div class="loadEffect" id="loading" style="display:none;">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <canvas id="playCanvas"></canvas>
+        <div id="descriptionBar">
+            <div id="videoTitleBar">Title</div>
+    <!--                <div id="videoDescriptionBar">Description</div>-->
+    <!--                <div id="videoViewCountBar">ViewCount</div>-->
+        </div>
+        <div id="controls">
+            <div id="trackBar">
+                <div id="timeTrack"></div>
+            </div>
+            <div id="buttons-container">
+                <div class="buttons" id="buttons-left">
+                    <button id="play-pause" onclick="onPlayButtonClick()"></button>
+                    <button id="liveButton" onclick="onLiveButtonClick()">LIVE•</button>
+                    <!--button id="stop" onclick="stopVideo(true)"></button -->
+                    <button id="backward" onclick="onSeekBackwardForwardClick(false)"></button>
+                    <button id="forward" onclick="onSeekBackwardForwardClick(true)"></button>
+                    <label id="timeLabel">00:00:00 / 00:00:00</label>
+                    </div>
+                <div class="buttons" id="buttons-right">
+                    <button id="share" onclick="onCopyLinkToClipboardClick()"></button>
+                    <button id="full-screen" onclick="onFullScreenButtonClick()"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    <div id="videoInfo" class="playerInfoColor">
+    <div id="videoInfoLeft">
+      <div id="videoTitle" style="visibility:hidden"> Title </div>
+      <div id="videoAuthor" style="visibility:hidden"> Author </div>
+    </div>
+    <div id="videoInfoRight">
+      <div class="button" id="appButton" style="visibility:hidden" onclick="loadAppOrPlayStore()">OPEN IN APP</div>
+    </div>
+    </div>
+    <div id="videoInfoDivider"></div>
+    <div id="descriptionBox" class="playerInfoColor">
+        <p style="visibility:hidden">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras nec urna vulputate, malesuada purus vel, hendrerit mi. Phasellus vehicula sem vitae turpis porta, eget semper massa laoreet. Fusce mauris mi, rhoncus sed dignissim nec, elementum eget nisi. Ut mollis eu neque id efficitur. Proin lacus lorem, tempus non ante pretium, imperdiet feugiat mauris. Duis ornare dolor a gravida pellentesque. Suspendisse suscipit blandit leo, vitae posuere magna suscipit et. Etiam molestie nibh non massa bibendum, vel molestie leo vehicula. Sed et accumsan massa, faucibus sodales justo. Aenean vitae arcu eu dui sodales dictum id id quam. Nullam blandit in sapien id consequat.
+
+        In hac habitasse platea dictumst. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus gravida leo id ante mattis, rhoncus aliquet leo suscipit. Nam quam libero, rhoncus pretium massa in, accumsan sollicitudin nibh. Sed eu feugiat ligula, vel laoreet mi. Aliquam sed risus consectetur turpis imperdiet molestie ac eu nisi. In interdum elit id sem lacinia, at dictum nunc aliquet. Nullam maximus gravida nibh sed egestas. Donec augue arcu, feugiat in risus non, condimentum laoreet mi. Phasellus viverra eros ac iaculis tincidunt. Aenean vel vestibulum elit, in varius mi. Aliquam erat volutpat.
+        </p>
+    </div>
+  </div>
+    <!--<div id="mainContainerInnerRight">-->
+    </div>
+  </div>
+  <div id="footer">Copyright &copy; 2021 AlcaCruz, Inc. All rights reserved.</div>
+  <script type='text/javascript' src="superStreamSDK/superStreamPlayerSDK.js"></script>
+  <script type='text/javascript' src="superStreamSDK/superstreamconsts.js"></script>
+  <script type='text/javascript' src="superStreamSDK/superstreamglobal.js"></script>
+  <script type='text/javascript' src="superStreamSDK/util.js"></script>
+  <script type='text/javascript' src="superStreamSDK/print.js"></script>
+  <script type='text/javascript' src="superStreamSDK/h265webgl.js"></script>
+  <script type='text/javascript' src="superStreamSDK/h265player.js"></script>
+  <script type='text/javascript' src="superStreamSDK/h264webgl.js"></script>
+  <script type='text/javascript' src="superStreamSDK/h264player.js"></script>
+  <script type='text/javascript' src="superStreamSDK/superstreamapi.js"></script>
+  <script type='text/javascript' src="superStreamSDK/superstreamconnect.js"></script>
+  <script type='text/javascript' src="mainuicontroller.js"></script>
+  <script type='text/javascript' src="mainplayer.js"></script>
+</body>
+</html>
