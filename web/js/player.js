@@ -1,4 +1,10 @@
-//Constant.
+/*
+ * Copyright (c) 2014 -     Keith Ha (keith4ever@gmail.com)
+ * All content herein is protected by U.S. copyright and other applicable intellectual property laws
+ * and may not be copied without the expressive permission of Keith Ha, who reserves all rights.
+ * Reuse of any of the content for any purpose without the permission of Keith Ha
+ * is strictly and expressively prohibited.
+ */
 
 // TODO: Remove UI functions
 const segmentFrameBufferTime    = 2.0;
@@ -386,8 +392,9 @@ Player.prototype.addFrameBuffer = function () {
             + (endTime - currentTime) + ", curr: " + currentTime
             + ", end: " + endTime + ", dts: " + norDTS);
         //this.remuxer.setRemuxError(1);
-        // now resetting videoSource with new videoBuffer
-        //errorFlush = 1;
+        this.domAudio.removeSourceBuffer(this.audioBuffer);
+        this.domAudio.src = URL.createObjectURL(this.audioSource);
+        return true;
     } else if (startTime < (endTime - constBufferTime)) {
         this.audioBuffer.remove(0, endTime - constBufferTime/2);
         return true;
@@ -482,7 +489,7 @@ Player.prototype.audioplayLoop = function() {
 
     var abufTime = this.calcBufTime();
     while(this.domAudio.currentTime > 0.1 && !this.endReached){
-        if(!this.domAudio.paused && abufTime < (lowFrameBufferTime/2)){
+        if(!this.domAudio.paused && abufTime < 0.4){
             this.domAudio.pause();
         } else break;
 

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2014 -     Keith Ha (keith4ever@gmail.com)
+ * All content herein is protected by U.S. copyright and other applicable intellectual property laws
+ * and may not be copied without the expressive permission of Keith Ha, who reserves all rights.
+ * Reuse of any of the content for any purpose without the permission of Keith Ha
+ * is strictly and expressively prohibited.
+ */
+
+
 const COMMAND = ["none", "pause", "resume", "seek", "seek2", "rtqa", "ad"];
 
 const VIDEOTYPE_VR    = 1;

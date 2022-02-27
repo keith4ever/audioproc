@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2014 -     Keith Ha (keith4ever@gmail.com)
+ * All content herein is protected by U.S. copyright and other applicable intellectual property laws
+ * and may not be copied without the expressive permission of Keith Ha, who reserves all rights.
+ * Reuse of any of the content for any purpose without the permission of Keith Ha
+ * is strictly and expressively prohibited.
+ */
+
 if(navigator.userAgent.includes("x64") || navigator.userAgent.includes("x86")
     || navigator.userAgent.includes("Intel"))
     self.arch = "x86";
