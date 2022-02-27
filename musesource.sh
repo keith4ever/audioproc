@@ -59,6 +59,45 @@ run_pipsource()
     printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
     printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
 
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
+    printf "file '%s'\n" ${INPUTFILE} >> ${PORT}.txt
     CMD="sudo ffmpeg -f concat -safe 0 -re -i ${PORT}.txt -loglevel quiet \
     -c copy -f flac -listen 0 http://${IPADDR}:${PORT}/muselive "
    #-vcodec copy -acodec copy -f rtsp -rtsp_transport tcp rtsp://${IPADDR}:${PORT}/ac/live "

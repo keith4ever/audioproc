@@ -2,8 +2,8 @@
 
 // TODO: Remove UI functions
 const segmentFrameBufferTime    = 2.0;
-const normalFrameBufferTime     = 1.5;
-const lowFrameBufferTime        = 0.8;
+const normalFrameBufferTime     = 1.0;
+const lowFrameBufferTime        = 0.7;
 
 function Player() {
     this.timeLabel          = null;
@@ -201,7 +201,6 @@ Player.prototype.initVars = function (){
     this.endReached         = false;
     this.visible            = true;
     this.visibleChanged     = false;
-    this.aBuffAppending     = false;
 };
 
 Player.prototype.getState = function () {
@@ -293,7 +292,6 @@ Player.prototype.addAudioSourceBuffer = function() {
         return;
     }
     this.audioBuffer.addEventListener('updateend', function (){
-        me.aBuffAppending = false;
     });
     this.audioBuffer.addEventListener('onerror', function (e){
         me.logger.logError(e);
@@ -376,22 +374,20 @@ Player.prototype.addFrameBuffer = function () {
     if (this.timeOffset === constInitAudioOffset) {
         dts = (this.samplePerSeg * this.firstSec) / this.sampleRate;
         this.timeOffset = dts - this.domAudio.currentTime;
-        this.logger.logInfo("First frame time: " + dts
+        this.logger.logInfo("First frame time: " + this.to2decimal(dts)
             + " - currentTime: " + this.domAudio.currentTime);
     }
 
     var norDTS = this.to2decimal((dts - this.timeOffset));
 
-    this.aBuffAppending = true;
-    //remove too big of buffer.. once it's removed, it'll also invoke 'updateend' event
     var errorFlush = 0;
     if(currentTime > 0 && this.domAudio.paused ){
         this.logger.logInfo("Buffer stuck, buf length: "
             + (endTime - currentTime) + ", curr: " + currentTime
             + ", end: " + endTime + ", dts: " + norDTS);
-        this.remuxer.setRemuxError(1);
+        //this.remuxer.setRemuxError(1);
         // now resetting videoSource with new videoBuffer
-        errorFlush = 1;
+        //errorFlush = 1;
     } else if (startTime < (endTime - constBufferTime)) {
         this.audioBuffer.remove(0, endTime - constBufferTime/2);
         return true;
