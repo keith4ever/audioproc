@@ -222,7 +222,7 @@ function setupMouseEvents(){
     timer = setTimeout(function () {
       controls.style.transform = "translateY(100%)";
       descriptionBar.style.transform = "translateY(-100%)";
-    }, 2000);
+    }, 10000);
   });
 
   videoPlayer.addEventListener("mouseleave", function (event) {
