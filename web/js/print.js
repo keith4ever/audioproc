@@ -24,13 +24,13 @@ Logger.prototype.logInfo = function (line) {
     console.log("[" + this.module + ": " + this.currentTimeStr() + "] " + line);
 };
 
-Logger.prototype.logDebug = function (line) {
-    //console.log("[" + this.module + ": " + this.currentTimeDiff() + "] " + line);
-};
-
-Logger.prototype.logWS = function (functionName, line) {
-    //console.log("[" + this.module + ", " + functionName + "] " + line);
-};
+Logger.prototype.isNullOrEmpty = function(str){
+    if(str !== null){
+        if (str != "" && str.length !== 0) return false;
+        else return true;
+    }
+    return true;
+}
 
 Logger.prototype.currentTimeStr = function () {
     var now = new Date(Date.now());

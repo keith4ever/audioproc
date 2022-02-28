@@ -6,21 +6,21 @@
  * is strictly and expressively prohibited.
  */
 
-let classNameMain = "mainPlayer.js";
+let classNameMain = "main.js";
 let lockButtons = false;
 let audiouuid = null;
 let audiosegment = 0;
 let samplenum = 0;
-let myUtil = null;
+let myLog = null;
 let myPlayer = null;
-let myApi = null;
+let restful = null;
 
 setup();
 
 function setup(){
-    myUtil = new Util(classNameMain);
+    myLog = new Logger(classNameMain);
     myPlayer = new Player();
-    myApi = new Api();
+    restful = new RESTful();
     // Get the video info if on the player page
 }
 
@@ -34,13 +34,13 @@ function delayStartLiveVideo(){
 function playVideo() {
     let fn = "playVideo";
     if(audiouuid === null || audiosegment <= 0) {
-        setTimeout(myApi.getLiveInfo.bind(myApi, handleGetLiveInfo), 5);
+        setTimeout(restful.getLiveInfo.bind(restful, handleGetLiveInfo), 5);
         return;
     }
 
     let currentState = myPlayer.getState();
     if(currentState == constStateStop) {
-        myPlayer.play(myApi.apiBaseLink + "/" + audiouuid, audiosegment, samplenum);
+        myPlayer.play(restful.apiBaseLink + "/" + audiouuid, audiosegment, samplenum);
         myPlayer.unmute();
         showLoading();
     }
@@ -53,10 +53,9 @@ function playVideo() {
 }
 
 function errReport(e){
-    let fn = "errReport";
-    myUtil.log(fn, "play error " + e.error + " status " + e.status + ".");
+    myLog.logError("play error " + e.error + " status " + e.status + ".");
     if (e.error == 1) {
-        myUtil.log("Finished.");
+        myLog.logError("Finished.");
     }
 }
 
@@ -64,7 +63,7 @@ function onLiveButtonClick(){
     if(lockButtons) return;
     let func = "onLiveButtonClick";
     if(myPlayer === null) return;
-    myUtil.log(func, "Live already enabled");
+    myLog.logInfo(func, "Live already enabled");
 }
 
 function onPlayButtonClick(){
@@ -82,7 +81,7 @@ function onCopyLinkToClipboardClick(){
 }
 
 function showVideoMessage(msg){
-    if(myUtil.isNullOrEmpty(msg)) return;
+    if(myLog.isNullOrEmpty(msg)) return;
     let videoMessage = document.getElementById("videoMessage");
     videoMessage.style.visibility = "visible";
     videoMessage.firstElementChild.innerHTML = msg;
@@ -94,4 +93,50 @@ function handleGetLiveInfo(data){
     audiosegment = obj.seg - 2;
     samplenum = obj.sample;
     playVideo();
+}
+
+
+function RESTful(){
+    //alert("created super stream api");
+    this.apiBaseLink = "http://test.cruz.tv:8080";
+    this.className = "Api";
+    this.logger = new Logger(this.className);
+    this.uuid = null;
+    this.segno = 0;
+}
+
+RESTful.prototype.getLiveInfo = function (callback){
+    var url = this.apiBaseLink + "/muselive"
+    this.makeRequest(url, callback);
+}
+
+RESTful.prototype.makeRequest = function(link, callback) {
+    let me = this;
+    try {
+        fetch(link, {
+            method: "GET",
+        })
+            .then(response => response.text())
+            .then(data => {
+                me.printJson(data);
+                callback(data);
+            })
+            .catch(err => me.logger.logError(err));
+    }
+    catch(exception){
+        me.logger.logError("Error making Api request");
+        const onGetVideoInfoError = new CustomEvent("onSuperStreamApiError", {
+            detail: {msg:exception},
+            bubbles: true,
+            cancelable: true,
+            composed: false,
+        });
+
+        //  this.dispatchEvent(new CustomEvent('awesome', { bubbles: true, detail: { text: () => textarea.value } }))
+        document.dispatchEvent(onGetVideoInfoError);
+    }
+}
+
+RESTful.prototype.printJson = function (data){
+    this.logger.logInfo(data);
 }

@@ -8,8 +8,6 @@
 
 let windowSwitch = false;
 
-let easterEggClicks = 0;
-
 let chunkInterval      = 1000;
 let timeTrack = document.getElementById("timeTrack");
 let timeLabel = document.getElementById("timeLabel");
@@ -19,7 +17,6 @@ let trackTimerInterval = 500;
 let displayDuration    = "00:00:00";
 
 let loadingDiv = document.getElementById("loading");
-
 let agent = navigator.userAgent.toLowerCase();
 
 function hasUserAgent(arr){
@@ -50,14 +47,6 @@ function showLoading(){
   }
   lockButtons = true;
 };
-
-function onEasterEggClick(){
-  easterEggClicks++;
-  if(easterEggClicks >= 5){
-    document.getElementById("testBar").style.display = "block";
-    document.getElementById("videoPlayer").style.height = "calc(56.25vw + 28px)"; //NOTE: Doesn't work?
-  }
-}
 
 function displayLiveButton(show){
   let live = document.getElementById("liveButton");
