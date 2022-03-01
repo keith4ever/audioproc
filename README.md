@@ -7,20 +7,23 @@ mkdir build
 cd build
 cmake ..
 make clean; make -j 8
-./audioproc -i ../sample.wav -o output.aac
+audioproc -i http://0.0.0.0:9981/muselive -o output 
+
 ```
 
 << Sample Result >>
 ```
-keith@mercury:/home/projects/temp/audioproc/build$ ./audioproc -i ../sample.wav -o output.aac
-[Open] sample rate: 48000, channel: 2, format: 1, codec: 65536
+[Open] sample rate: 48000, channel: 2, format: 1, codec: 86028
 
 =================================================================
-* audioproc ver. 1.00 - All rights reserved by Keith Ha. *
+* audioproc ver. 1.01 - All rights reserved by Keith Ha. *
 =================================================================
-    input           : "../sample.wav"
-    output          : "output.aac"
 =================================================================
-
-[main] Exiting audioproc.. 
+    root file path  : "/home/keith/video"
+    file check term : 1000 (ms)
+    URL             : "http://<IPaddr>:8080/output/output_#seg.mkv"
+    service start   : [Tue Mar  1 22:01:32 2022] 
+    input           : "http://0.0.0.0:9981/muselive"
+    output          : "output"
+=================================================================
 ```
