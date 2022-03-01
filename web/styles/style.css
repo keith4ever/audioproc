@@ -30,18 +30,6 @@
   //border: 3px solid black;
 }
 
-#mainLogo{
-  width: 140px;
-  height: 80%;
-  float: left;
-  margin-left: 15px;
-  margin-top: 7.5px;
-  background-image:url("../img/App-title.png");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-}
-
 #videoInfoDivider{
   background-color: #f9f9f9;
   width:100%;

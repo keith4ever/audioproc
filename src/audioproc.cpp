@@ -11,9 +11,9 @@
 #include "defs.h"
 
 SinkConfig      sConfig = {0};
-shared_ptr<MediaIn>       gpIFile  = nullptr;
-shared_ptr<MediaOut>      gpOFile  = nullptr;
-FileResponse*   gpFileRes          = nullptr;
+shared_ptr<MediaIn>     gpIFile  = nullptr;
+shared_ptr<MediaOut>    gpOFile  = nullptr;
+FileResponse*           gpFileRes = nullptr;
 
 using namespace std;
 
@@ -39,7 +39,6 @@ void deleteAllHandles() {
         delete gpFileRes;
         gpFileRes = nullptr;
     }
-
 }
 
 void PrintHelp(bool bUsage)

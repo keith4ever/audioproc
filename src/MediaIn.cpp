@@ -17,11 +17,11 @@ av_always_inline char* av_err2str_inline(int errnum)
 static int cbDecodeInterrupt(void *ctx)
 {
     // return whether to stop the input stream or not
-    MediaIn *infile = (MediaIn *)ctx;
+    auto pconfig = (SinkConfig *)ctx;
 
-    //if(infile->isRunning())
+    if(pconfig->bProcessRun)
         return 0;
-    //else return 1;
+    else return 1;
 }
 
 //=========== MediaIn =================
@@ -63,7 +63,7 @@ bool MediaIn::initFormatContext() {
     av_dict_set(&pFormatOpts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
 
     m_pFormatContext->interrupt_callback.callback = cbDecodeInterrupt;
-    m_pFormatContext->interrupt_callback.opaque = this;
+    m_pFormatContext->interrupt_callback.opaque = m_pSinkConfig;
     m_pFormatContext->max_analyze_duration = 10240000;
 
     if(strstr(m_pSinkConfig->inputURL, "http://")
