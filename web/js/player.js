@@ -392,9 +392,9 @@ Player.prototype.addFrameBuffer = function () {
             + (endTime - currentTime) + ", curr: " + currentTime
             + ", end: " + endTime + ", dts: " + norDTS);
         //this.remuxer.setRemuxError(1);
-        this.domAudio.removeSourceBuffer(this.audioBuffer);
-        this.domAudio.src = URL.createObjectURL(this.audioSource);
-        return true;
+        //this.domAudio.removeSourceBuffer(this.audioBuffer);
+        //this.domAudio.src = URL.createObjectURL(this.audioSource);
+        //return true;
     } else if (startTime < (endTime - constBufferTime)) {
         this.audioBuffer.remove(0, endTime - constBufferTime/2);
         return true;
