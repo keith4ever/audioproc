@@ -98,8 +98,8 @@ function handleGetLiveInfo(data){
 
 function RESTful(){
     //alert("created super stream api");
-    this.apiBaseLink = "http://test.cruz.tv:8080";
-    this.className = "Api";
+    this.apiBaseLink = "http://localhost:8080";
+    this.className = "API";
     this.logger = new Logger(this.className);
     this.uuid = null;
     this.segno = 0;
