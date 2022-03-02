@@ -387,7 +387,7 @@ Player.prototype.addFrameBuffer = function () {
     var norDTS = this.to2decimal((dts - this.timeOffset));
 
     var errorFlush = 0;
-    if(currentTime > 0 && this.domAudio.paused ){
+    if(currentTime > 0 && this.domAudio.paused && this.playerState === constStatePlaying){
         this.logger.logInfo("Buffer stuck, buf length: "
             + (endTime - currentTime) + ", curr: " + currentTime
             + ", end: " + endTime + ", dts: " + norDTS);
@@ -462,7 +462,7 @@ Player.prototype.onOtherMsg = function (msg, data) {
 
 Player.prototype.playPromise = function(abufTime) {
     if(this.domAudio === null) return;
-    if(this.domAudio.paused && abufTime >= lowFrameBufferTime){
+    if(this.domAudio.paused && abufTime >= lowFrameBufferTime + 0.1){
         var audioPromise  = this.domAudio.play();
 
         var me = this;
@@ -489,7 +489,7 @@ Player.prototype.audioplayLoop = function() {
 
     var abufTime = this.calcBufTime();
     while(this.domAudio.currentTime > 0.1 && !this.endReached){
-        if(!this.domAudio.paused && abufTime < 0.4){
+        if(!this.domAudio.paused && abufTime < 0.7){
             this.domAudio.pause();
         } else break;
 

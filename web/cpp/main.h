@@ -34,9 +34,8 @@ extern "C" {
 #define MIN(X, Y)  ((X) < (Y) ? (X) : (Y))
 
 #define MSG_END_REACHED     16
-#define MSG_FSD_STRING      21
 #define MSG_UUID_NOTFOUND   22
-#define MSG_OPEN_REMUXER    8
+#define MSG_OPEN_REMUXER    1
 #define MAX_LIVE_RETRY      9
 #define ADTS_FORMAT         1
 
