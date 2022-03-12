@@ -36,13 +36,13 @@ bool MediaOut::OpenSegfile() {
     m_pSinkConfig->lastSegno = m_fileSerial-1;
     if(m_fileSerial >= 200){
         sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
-                m_pSinkConfig->outputID, (m_fileSerial-200), AACEXTENSION);
+                m_pSinkConfig->outputID, (m_fileSerial-200), M4AEXTENSION);
         remove(m_outsegfile);
     }
     sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
-            m_pSinkConfig->outputID, m_fileSerial++, AACEXTENSION);
+            m_pSinkConfig->outputID, m_fileSerial++, M4AEXTENSION);
     ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,
-                       ADTSFORMAT, m_outsegfile);
+                                         nullptr, m_outsegfile);
     if(ret < 0)
         FUNCPRINT "could not open output file: " << av_err2str(ret) << endl;
 

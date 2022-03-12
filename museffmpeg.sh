@@ -18,11 +18,11 @@ BUILD_CMD="../ffmpeg/configure --enable-static --disable-shared --disable-progra
 --disable-outdevs --disable-devices --disable-decoders --disable-avdevice \
 --disable-parsers --disable-demuxers --disable-filters --disable-hwaccels \
 --disable-debug --disable-indevs --disable-outdevs \
---enable-encoder="flac,aac,mp3,m4a,wav,pcm_s16le,matroska" \
---enable-decoder="flac,aac,mp3,m4a,wav,pcm_s16le,matroska" \
---enable-parser="matroska,flac,aac,mp3,m4a,wav,pcm_s16le" \
---enable-demuxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
---enable-muxer="matroska,flac,aac,mp3,m4a,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
+--enable-encoder="flac,aac,mp3,mp4,m4a,wav,pcm_s16le,matroska" \
+--enable-decoder="flac,aac,mp3,mp4,m4a,wav,pcm_s16le,matroska" \
+--enable-parser="matroska,flac,aac,mp3,mp4,m4a,wav,pcm_s16le" \
+--enable-demuxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
+--enable-muxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
 --enable-protocol=file,http,tcp,rtmp,rtsp,rtp \
 --prefix=${PWD} --libdir=${PWD}/muselive/lib --incdir=${PWD}/muselive/inc "
 

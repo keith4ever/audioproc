@@ -19,13 +19,13 @@
 #define SAFE_FREE(x)        if(x){ delete(x); x = NULL;}
 #define SAFE_DEINIT_FREE(x) if(x){ x->Deinit(); delete(x); x = NULL;}
 #define FUNCPRINT           cout << "[" << __func__ << "] " <<
-#define FILESINK_TERM       60
 #define MKV_TIMEBASE        {1,1000}
 #define MAX_STREAM_BUFFER_SIZE  (4<<20)
 #define MKVFORMAT           "matroska"
 #define MKVEXTENSION        "mkv"
 #define ADTSFORMAT          "adts"
 #define AACEXTENSION        "aac"
+#define M4AEXTENSION        "m4a"
 
 #ifdef av_err2str
 #undef av_err2str
