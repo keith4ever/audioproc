@@ -6,8 +6,6 @@
  * is strictly and expressively prohibited.
  */
 
-// TODO: Remove UI functions
-const segmentFrameBufferTime    = 2.0;
 const normalFrameBufferTime     = 1.0;
 const lowFrameBufferTime        = 0.7;
 
@@ -63,7 +61,6 @@ Player.prototype.onError = function (err) {
         return;
 
     this.firstSec = parseInt(resetTime);
-    this.firstSec += (this.segterm/1000); // we need to pass the faulty point
 
     this.stop(true);
     this.logger.logInfo("Terminated WASM");
@@ -203,7 +200,6 @@ Player.prototype.initVars = function (){
     this.remuxing           = false;
     this.aFrameBuffer       = [];
     this.buffering          = false;
-    this.downloading        = false;
     this.endReached         = false;
     this.visible            = true;
     this.visibleChanged     = false;
@@ -261,7 +257,6 @@ Player.prototype.resume = function () {
     this.playerState = constStatePlaying;
     btnPlayPause.className = "pause";
     this.startRemuxing();
-    this.startSegDownload();
     this.startTrackTimer();
     this.audioplayLoop(); // it will resume playing when there is enough buffer in displayLoop
 };
@@ -273,7 +268,6 @@ Player.prototype.pause = function () {
     this.playerState = constStatePause;
     btnPlayPause.className = "play";
     this.pauseRemuxing();
-    this.stopSegDownload();
     if(this.domAudio)
         this.domAudio.pause();
 
@@ -489,10 +483,9 @@ Player.prototype.audioplayLoop = function() {
 
     var abufTime = this.calcBufTime();
     while(this.domAudio.currentTime > 0.1 && !this.endReached){
-        if(!this.domAudio.paused && abufTime < 0.7){
-            this.domAudio.pause();
-        } else break;
+        if(this.domAudio.paused || abufTime > 0.7) break;
 
+        this.domAudio.pause();
         this.logger.logInfo("pause, buffer length: "
             + this.to2decimal(abufTime));
         return;
@@ -557,27 +550,6 @@ Player.prototype.reportPlayError = function (error, status, message) {
     };
  };
 
-Player.prototype.startSegDownload = function () {
-    if(this.downloading) return;
-
-    this.downloading = true;
-    this.reportFrameBuffTime();
-};
-
-Player.prototype.stopSegDownload = function () {
-    this.downloading = false;
-};
-
-Player.prototype.reportFrameBuffTime = function(){
-    if(!this.remuxer) return;
-
-    /*this.remuxer.downloadSegment();
-
-    if(this.downloading)
-        setTimeout(this.reportFrameBuffTime.bind(this), 500);
-     */
-};
-
 Player.prototype.registerVisibilityEvent = function (callbackfunc) {
     var hidden = "hidden";
 
@@ -624,9 +596,4 @@ Player.prototype.getCurrentTime = function(){
 
 Player.prototype.getTimeOffset = function(){
     return this.timeOffset;
-}
-
-Player.prototype.deinitWASM = function (){
-    if(this.remuxer != null) delete this.remuxer;
-    this.remuxer = null;
 }

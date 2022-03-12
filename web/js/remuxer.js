@@ -34,8 +34,6 @@ function Remuxer() {
     this.url                = null;
     this.initVars();
     this.locationPath       = "js/";
-    this.loadJS('print.js', null);
-    this.loadJS('consts.js', null);
     this.loadJS("muxer_" + self.arch +".js", null);
 }
 
