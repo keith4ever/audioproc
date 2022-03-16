@@ -133,7 +133,7 @@ bool MediaIn::Open()
             avcodec_parameters_to_context(m_pAudioCodecCtx, pCodecPar);
             avcodec_open2(m_pAudioCodecCtx, codec, NULL);
             FUNCPRINT "sample rate: " << m_sampleRate << ", channel: " << m_channel
-                  << ", format: " << m_sampleFmt << ", codec: " << pCodecPar->codec_id
+                  << ", format: " << m_sampleFmt << ", codec: " << codec->name
                   << endl;
             break;
         }

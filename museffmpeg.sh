@@ -20,10 +20,10 @@ BUILD_CMD="../ffmpeg/configure --enable-static --disable-shared --disable-progra
 --disable-debug --disable-indevs --disable-outdevs \
 --enable-encoder="flac,aac,mp3,mp4,m4a,wav,pcm_s16le,matroska" \
 --enable-decoder="flac,aac,mp3,mp4,m4a,wav,pcm_s16le,matroska" \
---enable-parser="matroska,flac,aac,mp3,mp4,m4a,wav,pcm_s16le" \
---enable-demuxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
---enable-muxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp" \
---enable-protocol=file,http,tcp,rtmp,rtsp,rtp \
+--enable-parser="matroska,flac,aac,mp3,mp4,m4a,wav,pcm_s16le,mpegts" \
+--enable-demuxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp,mpegts,hls" \
+--enable-muxer="matroska,flac,aac,mp3,mp4,m4a,mov,wav,pcm_s16le,pcm_f32le,adts,rtsp,mpegts,hls" \
+--enable-protocol=file,http,tcp,rtmp,rtsp,rtp,hls \
 --prefix=${PWD} --libdir=${PWD}/muselive/lib --incdir=${PWD}/muselive/inc "
 
 

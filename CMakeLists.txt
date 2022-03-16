@@ -6,7 +6,7 @@
 # is strictly and expressively prohibited.
 #
 cmake_minimum_required(VERSION 3.3.0)
-project(audioproc)
+project(mediaproc)
 
 include(env.cmake)
 
@@ -43,7 +43,7 @@ set(SOURCE_FILES
         src/MediaIn.cpp
         src/MediaPacket.cpp
         src/MediaOut.cpp
-        src/audioproc.cpp
+        src/mediaproc.cpp
         src/Queue.cpp
         src/FileServer.cpp
         )
@@ -69,8 +69,8 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
         )
 endif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
 
-add_executable(audioproc ${SOURCE_FILES})
+add_executable(mediaproc ${SOURCE_FILES})
 
 SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
-target_link_libraries(audioproc ${STATIC_LIBRARIES} ${DYNAMIC_LIBRARIES} )
+target_link_libraries(mediaproc ${STATIC_LIBRARIES} ${DYNAMIC_LIBRARIES} )

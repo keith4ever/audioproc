@@ -44,9 +44,9 @@ void deleteAllHandles() {
 void PrintHelp(bool bUsage)
 {
     printf("\n\n=================================================================\n");
-    printf("* audioproc ver. %s - All rights reserved by Keith Ha. *\n", _VERSION);
+    printf("* mediaproc ver. %s - All rights reserved by Keith Ha. *\n", _VERSION);
     if(bUsage) {
-        printf("\nUsage: ./audioproc -i <input url> -o <output UUID> \n");
+        printf("\nUsage: ./mediaproc -i <input url> -o <output UUID> \n");
     }
     printf("=================================================================\n");
 }
@@ -71,13 +71,13 @@ bool CheckConfigs()
     printf("=================================================================\n");
     printf("    root file path  : \"%s\"\n", sConfig.httpFilePath);
     printf("    file check term : %d (ms)\n", sConfig.httpFilecheckterm);
-    printf("    URL             : \"http://<IPaddr>:%d/%s/%s_#seg.mkv\"\n",
-           sConfig.httpPort, sConfig.outputID, sConfig.outputID);
-    printf("    service start   : ");
+    printf("    play m3u8 URL   : \"http://<IPaddr>:%d/%s/%s.%s\"\n",
+           sConfig.httpPort, sConfig.outputID, sConfig.outputID, HLSEXTENSION);
+    printf("    service started : ");
     print_timestamp();  cout << endl;
 
     printf("    input           : \"%s\"\n", sConfig.inputURL);
-    printf("    output          : \"%s\"\n", sConfig.outputID);
+    printf("    output ID       : \"%s\"\n", sConfig.outputID);
     printf("=================================================================\n\n");
     return true;
 }
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 
     pthread_cancel(progPid);
     deleteAllHandles();
-    FUNCPRINT "Exiting audioproc.. " << endl;
+    FUNCPRINT "Exiting mediaproc.. " << endl;
 
     return 0;
 }

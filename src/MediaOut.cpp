@@ -34,15 +34,20 @@ bool MediaOut::OpenSegfile() {
 
     // setting next segment file name here
     m_pSinkConfig->lastSegno = m_fileSerial-1;
-    if(m_fileSerial >= 200){
+    /*if(m_fileSerial >= 200){
         sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
-                m_pSinkConfig->outputID, (m_fileSerial-200), M4AEXTENSION);
+                m_pSinkConfig->outputID, (m_fileSerial-200), HLSEXTENSION);
         remove(m_outsegfile);
     }
-    sprintf(m_outsegfile, "%s/%s_%d.%s", m_pSinkConfig->outputID,
-            m_pSinkConfig->outputID, m_fileSerial++, M4AEXTENSION);
+            */
+
+    sprintf(m_outsegfile, "%s/%s_%%05d.%s", m_pSinkConfig->outputID,
+            m_pSinkConfig->outputID, TSEXTENSION);
+    char m3u8file[128];
+    sprintf(m3u8file, "%s/%s.%s", m_pSinkConfig->outputID,
+            m_pSinkConfig->outputID, HLSEXTENSION);
     ret = avformat_alloc_output_context2(&m_pFileContext, nullptr,
-                                         nullptr, m_outsegfile);
+                                         "hls", m3u8file);
     if(ret < 0)
         FUNCPRINT "could not open output file: " << av_err2str(ret) << endl;
 
@@ -81,13 +86,20 @@ bool MediaOut::OpenSegfile() {
     }
     av_dump_format(m_pFileContext, 0, NULL, 1);
 
-    ret = avio_open(&m_pFileContext->pb, m_outsegfile, AVIO_FLAG_WRITE);
+    /*ret = avio_open(&m_pFileContext->pb, m_outsegfile, AVIO_FLAG_WRITE);
     if (ret < 0) {
         printf("Could not open output file %s", m_outsegfile);
         return false;
-    }
+    }*/
 
-    if (avformat_write_header(m_pFileContext, NULL) < 0)
+    AVDictionary* opts(0);
+    av_dict_set(&opts, "hls_segment_type", "mpegts", 0);
+    av_dict_set(&opts, "segment_list_type", "m3u8", 0);
+    av_dict_set(&opts, "hls_segment_filename", m_outsegfile, 0);
+    av_dict_set_int(&opts, "hls_list_size", 120, 0);
+    av_dict_set_int(&opts, "hls_time", 1, 0);
+
+    if (avformat_write_header(m_pFileContext, &opts) < 0)
         printf("Error occurred when writing header\n");
     //FUNCPRINT "** Outfile seq. number: " << (m_pSinkConfig->inputSeqno-1) << endl;
 
@@ -200,19 +212,19 @@ bool MediaOut::CloseSegfile(bool bForce) {
 
     if(m_lastDTS - m_printDTS >= 10000){
         timeformat(m_lastDTS/1000);
-        cout << "#" << (m_fileSerial - 1) << " elapsed = " << (int)((m_lastDTS - m_printDTS) / 1000)
+        cout <<  " elapsed = " << (int)((m_lastDTS - m_printDTS) / 1000)
                       << " s, # of samples = " << (m_totalSampleNum - m_printSampleNum) << endl;
         m_printDTS = m_lastDTS;
         m_printSampleNum = m_totalSampleNum;
     }
 
     av_write_trailer(m_pFileContext);
-    if(m_pFileContext->pb) {
+    /*if(m_pFileContext->pb) {
         if (!(m_pFileContext->flags & AVFMT_NOFILE)) {
             avio_closep(&m_pFileContext->pb);
             m_pFileContext->pb = nullptr;
         }
-    }
+    }*/
     avformat_free_context(m_pFileContext);
     m_pFileContext = nullptr;
     return true;
@@ -260,8 +272,8 @@ int MediaOut::ConvertFrame(AVFrame *inFrame) {
 }
 
 int MediaOut::EncodeWrite() {
-    if(CloseSegfile(false))
-        OpenSegfile();
+    //if(CloseSegfile(false))
+    //    OpenSegfile();
 
     const int frame_size = FFMIN(av_audio_fifo_size(m_pFifo),
                                  m_pAudioCodecCtx->frame_size);
@@ -300,7 +312,9 @@ int MediaOut::EncodeWrite() {
     packet.pts = 1000 * m_totalSampleNum / m_pAudioCodecCtx->sample_rate;
     packet.dts = packet.pts;
     packet.duration = 1000 * m_pOutFrame->nb_samples / m_pAudioCodecCtx->sample_rate;
+    av_packet_rescale_ts(&packet, MKV_TIMEBASE, m_pFileContext->streams[0]->time_base);
     m_lastDTS = packet.dts;
+
     int res = av_interleaved_write_frame(m_pFileContext, &packet);
     if (res < 0) {
         printf("Error from output writing packet: %s\n", av_err2str(res));

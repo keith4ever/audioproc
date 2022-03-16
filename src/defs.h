@@ -26,6 +26,8 @@
 #define ADTSFORMAT          "adts"
 #define AACEXTENSION        "aac"
 #define M4AEXTENSION        "m4a"
+#define TSEXTENSION         "ts"
+#define HLSEXTENSION        "m3u8"
 
 #ifdef av_err2str
 #undef av_err2str
